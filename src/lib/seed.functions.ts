@@ -28,7 +28,7 @@ export const seedClaims = createServerFn({ method: "POST" }).handler(async () =>
     risk_score: c.riskScore,
     risk_level: c.riskLevel,
     submitted_at: c.submittedAt,
-    reasons: c.reasons,
+    reasons: c.reasons as unknown as Record<string, unknown>[],
   }));
 
   const { error } = await supabaseAdmin.from("claims").upsert(rows, { onConflict: "id" });
