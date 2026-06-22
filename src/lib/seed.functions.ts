@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { claims as mockClaims } from "./claims-data";
+import type { Json } from "@/integrations/supabase/types";
 
 /**
  * Idempotently seeds the claims table from the deterministic mock dataset.
