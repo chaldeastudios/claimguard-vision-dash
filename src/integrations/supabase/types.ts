@@ -14,7 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      claim_risk_analysis: {
+        Row: {
+          claim_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          model: string
+          raw: Json | null
+          reasons: Json
+          recommendation: string
+          risk_level: string
+          risk_score: number
+          summary: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model: string
+          raw?: Json | null
+          reasons?: Json
+          recommendation: string
+          risk_level: string
+          risk_score: number
+          summary: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string
+          raw?: Json | null
+          reasons?: Json
+          recommendation?: string
+          risk_level?: string
+          risk_score?: number
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_risk_analysis_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claims: {
+        Row: {
+          amount: number
+          created_at: string
+          diagnosis: string
+          diagnosis_code: string
+          facility: string
+          id: string
+          patient: string
+          patient_id: string
+          reasons: Json
+          risk_level: string
+          risk_score: number
+          services: string[]
+          status: string
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          diagnosis: string
+          diagnosis_code: string
+          facility: string
+          id: string
+          patient: string
+          patient_id: string
+          reasons?: Json
+          risk_level: string
+          risk_score: number
+          services?: string[]
+          status?: string
+          submitted_at: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          diagnosis?: string
+          diagnosis_code?: string
+          facility?: string
+          id?: string
+          patient?: string
+          patient_id?: string
+          reasons?: Json
+          risk_level?: string
+          risk_score?: number
+          services?: string[]
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
