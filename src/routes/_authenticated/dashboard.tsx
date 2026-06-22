@@ -73,8 +73,23 @@ function DashboardLayout() {
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--brand-brown)] text-sm font-medium text-[color:var(--brand-brown-foreground)]">
               AM
             </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sign out
+            </button>
           </div>
         </header>
+        <div className="px-6 py-8 md:px-10">
+          <Outlet />
+        </div>
+      </main>
+    </div>
+  );
+}
         <div className="px-6 py-8 md:px-10">
           <Outlet />
         </div>
