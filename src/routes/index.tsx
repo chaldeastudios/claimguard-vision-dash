@@ -49,7 +49,7 @@ function Nav() {
       </nav>
       <div className="flex items-center gap-3">
         <Link
-          to="/dashboard"
+          to="/auth"
           className="rounded-full px-5 py-2.5 text-sm font-medium text-foreground hover:bg-[color:var(--brand-cream)]"
         >
           Sign In
@@ -313,7 +313,7 @@ function Footer() {
           </div>
           <div className="flex items-center gap-4">
             <Link
-              to="/dashboard"
+              to="/auth"
               className="rounded-full border border-white/20 px-5 py-2.5 text-sm text-white hover:bg-white/10"
             >
               Sign In
