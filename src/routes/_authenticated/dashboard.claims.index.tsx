@@ -1,6 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { claims, facilitiesList, fmtKES, type RiskLevel } from "@/lib/claims-data";
+import { useQuery } from "@tanstack/react-query";
+import {
+  fetchClaims,
+  facilitiesList,
+  fmtKES,
+  type RiskLevel,
+} from "@/lib/claims-api";
 
 export const Route = createFileRoute("/_authenticated/dashboard/claims/")({
   component: ClaimsQueue,
@@ -22,6 +28,11 @@ function RiskBadge({ level, score }: { level: RiskLevel; score: number }) {
 }
 
 function ClaimsQueue() {
+  const { data: claims = [], isLoading } = useQuery({
+    queryKey: ["claims"],
+    queryFn: fetchClaims,
+  });
+
   const [q, setQ] = useState("");
   const [risk, setRisk] = useState<"All" | RiskLevel>("All");
   const [facility, setFacility] = useState<string>("All");
@@ -48,7 +59,7 @@ function ClaimsQueue() {
           : +new Date(b.submittedAt) - +new Date(a.submittedAt),
     );
     return r;
-  }, [q, risk, facility, sortKey]);
+  }, [claims, q, risk, facility, sortKey]);
 
   return (
     <div className="space-y-6">
@@ -57,7 +68,9 @@ function ClaimsQueue() {
           Claims <span className="accent-word">Queue</span>
         </h1>
         <p className="mt-2 text-muted-foreground">
-          {rows.length} claims · sorted by {sortKey === "score" ? "risk score" : sortKey === "amount" ? "amount" : "date"}
+          {isLoading
+            ? "Loading…"
+            : `${rows.length} claims · sorted by ${sortKey === "score" ? "risk score" : sortKey === "amount" ? "amount" : "date"}`}
         </p>
       </div>
 
@@ -144,6 +157,13 @@ function ClaimsQueue() {
                 </td>
               </tr>
             ))}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-5 py-10 text-center text-sm text-muted-foreground">
+                  {isLoading ? "Loading claims…" : "No claims match the current filters."}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
