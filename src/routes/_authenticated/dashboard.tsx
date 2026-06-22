@@ -64,7 +64,7 @@ function DashboardLayout() {
     <div className="flex min-h-screen w-full bg-background">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto bg-[color:var(--sidebar)] text-[color:var(--sidebar-foreground)] md:flex">
         <Link to="/" className="flex items-center gap-2 px-6 py-6 text-white">
-          <LogoMark className="h-8 w-8 text-[color:var(--brand-orange)]" />
+          <LogoMark className="h-8 w-auto text-white" />
           <span className="font-serif text-xl">ClaimGuard</span>
         </Link>
         <nav className="mt-2 flex flex-col gap-1 px-3">

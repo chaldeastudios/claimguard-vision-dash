@@ -70,7 +70,7 @@ function AuthPage() {
     <div className="flex min-h-screen bg-[color:var(--brand-cream)]">
       <div className="hidden flex-1 flex-col justify-between bg-[color:var(--sidebar)] p-12 text-white lg:flex">
         <Link to="/" className="flex items-center gap-3">
-          <LogoMark className="h-9 w-9 text-[color:var(--brand-orange)]" />
+          <LogoMark className="h-9 w-auto text-[color:var(--brand-orange)]" />
           <span className="font-serif text-2xl">ClaimGuard</span>
         </Link>
         <div className="max-w-md space-y-6">

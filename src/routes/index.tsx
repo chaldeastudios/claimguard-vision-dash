@@ -100,8 +100,8 @@ function Nav() {
       className="fixed inset-x-0 top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md"
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-      <Link to="/" className="flex items-center gap-2 text-[color:var(--brand-brown)]">
-        <LogoMark className="h-9 w-9" />
+      <Link to="/" className="flex items-center gap-2">
+        <LogoMark className="h-9 w-auto text-[color:var(--brand-brown)]" />
         <span className="font-serif text-2xl tracking-tight text-foreground">ClaimGuard</span>
       </Link>
       <nav className="hidden items-center gap-8 text-sm text-foreground md:flex">
