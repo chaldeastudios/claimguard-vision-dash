@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { claims, facilitiesList, fmtKES } from "@/lib/claims-data";
 
-export const Route = createFileRoute("/dashboard/hospitals")({
+export const Route = createFileRoute("/_authenticated/dashboard/hospitals")({
   component: Hospitals,
 });
 

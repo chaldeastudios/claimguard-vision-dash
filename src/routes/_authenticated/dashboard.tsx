@@ -1,7 +1,10 @@
-import { Outlet, createFileRoute, Link, useRouterState } from "@tanstack/react-router";
+import { Outlet, createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { LogoMark } from "@/components/brand/icons";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { LogOut } from "lucide-react";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [{ title: "ClaimGuard — Reviewer Dashboard" }],
   }),
@@ -17,8 +20,17 @@ const nav: Array<{ to: string; label: string; end?: boolean }> = [
 
 function DashboardLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isActive = (to: string, end?: boolean) =>
     end ? pathname === to : pathname === to || pathname.startsWith(to + "/");
+
+  async function handleSignOut() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -61,6 +73,14 @@ function DashboardLayout() {
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--brand-brown)] text-sm font-medium text-[color:var(--brand-brown-foreground)]">
               AM
             </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Sign out
+            </button>
           </div>
         </header>
         <div className="px-6 py-8 md:px-10">

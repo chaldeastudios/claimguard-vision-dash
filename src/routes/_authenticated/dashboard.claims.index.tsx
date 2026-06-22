@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { claims, facilitiesList, fmtKES, type RiskLevel } from "@/lib/claims-data";
 
-export const Route = createFileRoute("/dashboard/claims/")({
+export const Route = createFileRoute("/_authenticated/dashboard/claims/")({
   component: ClaimsQueue,
 });
 
