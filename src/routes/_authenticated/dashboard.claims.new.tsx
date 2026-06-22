@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClaim } from "@/lib/create-claim.functions";
 import { analyzeClaim } from "@/lib/ai-analysis.functions";
+import { pendingClaimIds } from "@/lib/pending-analysis";
 import { HOSPITALS, DIAGNOSES, SERVICES, KENYAN_NAMES } from "@/lib/medical-presets";
 import { ArrowLeft, Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -63,15 +64,18 @@ function NewClaim() {
       });
 
       toast.success("Claim submitted — AI analysis running");
+      pendingClaimIds.add(claim.id);
       qc.invalidateQueries({ queryKey: ["claims"] });
 
       // Fire-and-forget AI analysis; queue auto-refreshes via polling.
       analyze({ data: { claimId: claim.id } })
         .then(() => {
+          pendingClaimIds.delete(claim.id);
           qc.invalidateQueries({ queryKey: ["analysis", claim.id] });
           qc.invalidateQueries({ queryKey: ["claims"] });
         })
         .catch((err) => {
+          pendingClaimIds.delete(claim.id);
           console.error("AI analysis failed", err);
           toast.error("AI analysis failed for " + claim.id);
         });

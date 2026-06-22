@@ -7,6 +7,7 @@ import {
   fmtKES,
   type RiskLevel,
 } from "@/lib/claims-api";
+import { pendingClaimIds } from "@/lib/pending-analysis";
 import { Plus, Search, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/claims/")({
@@ -28,11 +29,19 @@ function RiskBadge({ level, score }: { level: RiskLevel; score: number }) {
   );
 }
 
-function PendingBadge() {
+function AnalyzingBadge() {
   return (
     <span className="inline-flex animate-pulse items-center gap-2 rounded-full bg-[color:var(--brand-brown)]/15 px-3 py-1 text-xs font-medium text-[color:var(--brand-brown)]">
       <Loader2 className="h-3 w-3 animate-spin" />
       Analyzing…
+    </span>
+  );
+}
+
+function NoAnalysisBadge() {
+  return (
+    <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+      No analysis done
     </span>
   );
 }
@@ -44,7 +53,7 @@ function ClaimsQueue() {
     refetchInterval: (q) => {
       const data = q.state.data;
       if (!data) return false;
-      return data.some((c) => !c.analysis) ? 4000 : false;
+      return data.some((c) => !c.analysis && pendingClaimIds.has(c.id)) ? 4000 : false;
     },
   });
 
@@ -183,8 +192,10 @@ function ClaimsQueue() {
                       level={c.analysis.risk_level as RiskLevel}
                       score={c.analysis.risk_score}
                     />
+                  ) : pendingClaimIds.has(c.id) ? (
+                    <AnalyzingBadge />
                   ) : (
-                    <PendingBadge />
+                    <NoAnalysisBadge />
                   )}
                 </td>
               </tr>
