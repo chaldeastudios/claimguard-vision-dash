@@ -102,7 +102,7 @@ function Overview() {
   // First-run seed: if the table is empty, populate with the demo dataset.
   useEffect(() => {
     if (!isLoading && claims.length === 0) {
-      seedFn({ data: undefined as never })
+      seedFn()
         .then(() => qc.invalidateQueries({ queryKey: ["claims"] }))
         .catch((e) => console.error("seed failed", e));
     }
