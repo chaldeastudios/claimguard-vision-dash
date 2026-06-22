@@ -9,84 +9,90 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
-import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
-import { Route as DashboardHospitalsRouteImport } from './routes/dashboard.hospitals'
-import { Route as DashboardClaimsRouteImport } from './routes/dashboard.claims'
-import { Route as DashboardClaimsIndexRouteImport } from './routes/dashboard.claims.index'
-import { Route as DashboardClaimsClaimIdRouteImport } from './routes/dashboard.claims.$claimId'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
+import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard.settings'
+import { Route as AuthenticatedDashboardHospitalsRouteImport } from './routes/_authenticated/dashboard.hospitals'
+import { Route as AuthenticatedDashboardClaimsRouteImport } from './routes/_authenticated/dashboard.claims'
+import { Route as AuthenticatedDashboardClaimsIndexRouteImport } from './routes/_authenticated/dashboard.claims.index'
+import { Route as AuthenticatedDashboardClaimsClaimIdRouteImport } from './routes/_authenticated/dashboard.claims.$claimId'
 
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DashboardRoute,
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/_authenticated/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardHospitalsRoute = DashboardHospitalsRouteImport.update({
-  id: '/hospitals',
-  path: '/hospitals',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardClaimsRoute = DashboardClaimsRouteImport.update({
-  id: '/claims',
-  path: '/claims',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardClaimsIndexRoute = DashboardClaimsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DashboardClaimsRoute,
-} as any)
-const DashboardClaimsClaimIdRoute = DashboardClaimsClaimIdRouteImport.update({
-  id: '/$claimId',
-  path: '/$claimId',
-  getParentRoute: () => DashboardClaimsRoute,
-} as any)
+const AuthenticatedDashboardIndexRoute =
+  AuthenticatedDashboardIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardSettingsRoute =
+  AuthenticatedDashboardSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardHospitalsRoute =
+  AuthenticatedDashboardHospitalsRouteImport.update({
+    id: '/hospitals',
+    path: '/hospitals',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardClaimsRoute =
+  AuthenticatedDashboardClaimsRouteImport.update({
+    id: '/claims',
+    path: '/claims',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedDashboardClaimsIndexRoute =
+  AuthenticatedDashboardClaimsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedDashboardClaimsRoute,
+  } as any)
+const AuthenticatedDashboardClaimsClaimIdRoute =
+  AuthenticatedDashboardClaimsClaimIdRouteImport.update({
+    id: '/$claimId',
+    path: '/$claimId',
+    getParentRoute: () => AuthenticatedDashboardClaimsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRouteWithChildren
-  '/dashboard/claims': typeof DashboardClaimsRouteWithChildren
-  '/dashboard/hospitals': typeof DashboardHospitalsRoute
-  '/dashboard/settings': typeof DashboardSettingsRoute
-  '/dashboard/': typeof DashboardIndexRoute
-  '/dashboard/claims/$claimId': typeof DashboardClaimsClaimIdRoute
-  '/dashboard/claims/': typeof DashboardClaimsIndexRoute
+  '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
+  '/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRoute
+  '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/claims/$claimId': typeof AuthenticatedDashboardClaimsClaimIdRoute
+  '/dashboard/claims/': typeof AuthenticatedDashboardClaimsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard/hospitals': typeof DashboardHospitalsRoute
-  '/dashboard/settings': typeof DashboardSettingsRoute
-  '/dashboard': typeof DashboardIndexRoute
-  '/dashboard/claims/$claimId': typeof DashboardClaimsClaimIdRoute
-  '/dashboard/claims': typeof DashboardClaimsIndexRoute
+  '/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRoute
+  '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/dashboard': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/claims/$claimId': typeof AuthenticatedDashboardClaimsClaimIdRoute
+  '/dashboard/claims': typeof AuthenticatedDashboardClaimsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRouteWithChildren
-  '/dashboard/claims': typeof DashboardClaimsRouteWithChildren
-  '/dashboard/hospitals': typeof DashboardHospitalsRoute
-  '/dashboard/settings': typeof DashboardSettingsRoute
-  '/dashboard/': typeof DashboardIndexRoute
-  '/dashboard/claims/$claimId': typeof DashboardClaimsClaimIdRoute
-  '/dashboard/claims/': typeof DashboardClaimsIndexRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
+  '/_authenticated/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
+  '/_authenticated/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRoute
+  '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
+  '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/_authenticated/dashboard/claims/$claimId': typeof AuthenticatedDashboardClaimsClaimIdRoute
+  '/_authenticated/dashboard/claims/': typeof AuthenticatedDashboardClaimsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -110,29 +116,22 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
-    | '/dashboard/claims'
-    | '/dashboard/hospitals'
-    | '/dashboard/settings'
-    | '/dashboard/'
-    | '/dashboard/claims/$claimId'
-    | '/dashboard/claims/'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/dashboard/claims'
+    | '/_authenticated/dashboard/hospitals'
+    | '/_authenticated/dashboard/settings'
+    | '/_authenticated/dashboard/'
+    | '/_authenticated/dashboard/claims/$claimId'
+    | '/_authenticated/dashboard/claims/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRouteWithChildren
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -140,86 +139,100 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard/': {
-      id: '/dashboard/'
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard/': {
+      id: '/_authenticated/dashboard/'
       path: '/'
       fullPath: '/dashboard/'
-      preLoaderRoute: typeof DashboardIndexRouteImport
-      parentRoute: typeof DashboardRoute
+      preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
     }
-    '/dashboard/settings': {
-      id: '/dashboard/settings'
+    '/_authenticated/dashboard/settings': {
+      id: '/_authenticated/dashboard/settings'
       path: '/settings'
       fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof DashboardSettingsRouteImport
-      parentRoute: typeof DashboardRoute
+      preLoaderRoute: typeof AuthenticatedDashboardSettingsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
     }
-    '/dashboard/hospitals': {
-      id: '/dashboard/hospitals'
+    '/_authenticated/dashboard/hospitals': {
+      id: '/_authenticated/dashboard/hospitals'
       path: '/hospitals'
       fullPath: '/dashboard/hospitals'
-      preLoaderRoute: typeof DashboardHospitalsRouteImport
-      parentRoute: typeof DashboardRoute
+      preLoaderRoute: typeof AuthenticatedDashboardHospitalsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
     }
-    '/dashboard/claims': {
-      id: '/dashboard/claims'
+    '/_authenticated/dashboard/claims': {
+      id: '/_authenticated/dashboard/claims'
       path: '/claims'
       fullPath: '/dashboard/claims'
-      preLoaderRoute: typeof DashboardClaimsRouteImport
-      parentRoute: typeof DashboardRoute
+      preLoaderRoute: typeof AuthenticatedDashboardClaimsRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
     }
-    '/dashboard/claims/': {
-      id: '/dashboard/claims/'
+    '/_authenticated/dashboard/claims/': {
+      id: '/_authenticated/dashboard/claims/'
       path: '/'
       fullPath: '/dashboard/claims/'
-      preLoaderRoute: typeof DashboardClaimsIndexRouteImport
-      parentRoute: typeof DashboardClaimsRoute
+      preLoaderRoute: typeof AuthenticatedDashboardClaimsIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardClaimsRoute
     }
-    '/dashboard/claims/$claimId': {
-      id: '/dashboard/claims/$claimId'
+    '/_authenticated/dashboard/claims/$claimId': {
+      id: '/_authenticated/dashboard/claims/$claimId'
       path: '/$claimId'
       fullPath: '/dashboard/claims/$claimId'
-      preLoaderRoute: typeof DashboardClaimsClaimIdRouteImport
-      parentRoute: typeof DashboardClaimsRoute
+      preLoaderRoute: typeof AuthenticatedDashboardClaimsClaimIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardClaimsRoute
     }
   }
 }
 
-interface DashboardClaimsRouteChildren {
-  DashboardClaimsClaimIdRoute: typeof DashboardClaimsClaimIdRoute
-  DashboardClaimsIndexRoute: typeof DashboardClaimsIndexRoute
+interface AuthenticatedDashboardClaimsRouteChildren {
+  AuthenticatedDashboardClaimsClaimIdRoute: typeof AuthenticatedDashboardClaimsClaimIdRoute
+  AuthenticatedDashboardClaimsIndexRoute: typeof AuthenticatedDashboardClaimsIndexRoute
 }
 
-const DashboardClaimsRouteChildren: DashboardClaimsRouteChildren = {
-  DashboardClaimsClaimIdRoute: DashboardClaimsClaimIdRoute,
-  DashboardClaimsIndexRoute: DashboardClaimsIndexRoute,
+const AuthenticatedDashboardClaimsRouteChildren: AuthenticatedDashboardClaimsRouteChildren =
+  {
+    AuthenticatedDashboardClaimsClaimIdRoute:
+      AuthenticatedDashboardClaimsClaimIdRoute,
+    AuthenticatedDashboardClaimsIndexRoute:
+      AuthenticatedDashboardClaimsIndexRoute,
+  }
+
+const AuthenticatedDashboardClaimsRouteWithChildren =
+  AuthenticatedDashboardClaimsRoute._addFileChildren(
+    AuthenticatedDashboardClaimsRouteChildren,
+  )
+
+interface AuthenticatedDashboardRouteChildren {
+  AuthenticatedDashboardClaimsRoute: typeof AuthenticatedDashboardClaimsRouteWithChildren
+  AuthenticatedDashboardHospitalsRoute: typeof AuthenticatedDashboardHospitalsRoute
+  AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
+  AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
 }
 
-const DashboardClaimsRouteWithChildren = DashboardClaimsRoute._addFileChildren(
-  DashboardClaimsRouteChildren,
-)
+const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
+  {
+    AuthenticatedDashboardClaimsRoute:
+      AuthenticatedDashboardClaimsRouteWithChildren,
+    AuthenticatedDashboardHospitalsRoute: AuthenticatedDashboardHospitalsRoute,
+    AuthenticatedDashboardSettingsRoute: AuthenticatedDashboardSettingsRoute,
+    AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
+  }
 
-interface DashboardRouteChildren {
-  DashboardClaimsRoute: typeof DashboardClaimsRouteWithChildren
-  DashboardHospitalsRoute: typeof DashboardHospitalsRoute
-  DashboardSettingsRoute: typeof DashboardSettingsRoute
-  DashboardIndexRoute: typeof DashboardIndexRoute
-}
-
-const DashboardRouteChildren: DashboardRouteChildren = {
-  DashboardClaimsRoute: DashboardClaimsRouteWithChildren,
-  DashboardHospitalsRoute: DashboardHospitalsRoute,
-  DashboardSettingsRoute: DashboardSettingsRoute,
-  DashboardIndexRoute: DashboardIndexRoute,
-}
-
-const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
-  DashboardRouteChildren,
-)
+const AuthenticatedDashboardRouteWithChildren =
+  AuthenticatedDashboardRoute._addFileChildren(
+    AuthenticatedDashboardRouteChildren,
+  )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRouteWithChildren,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

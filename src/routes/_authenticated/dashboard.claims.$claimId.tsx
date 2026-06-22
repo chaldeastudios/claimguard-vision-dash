@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getClaim, fmtKES, type Claim, type FraudReason } from "@/lib/claims-data";
 
-export const Route = createFileRoute("/dashboard/claims/$claimId")({
+export const Route = createFileRoute("/_authenticated/dashboard/claims/$claimId")({
   loader: ({ params }) => {
     const claim = getClaim(params.claimId);
     if (!claim) throw notFound();

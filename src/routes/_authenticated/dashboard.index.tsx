@@ -9,7 +9,7 @@ import {
   avgRiskScore,
 } from "@/lib/claims-data";
 
-export const Route = createFileRoute("/dashboard/")({
+export const Route = createFileRoute("/_authenticated/dashboard/")({
   component: Overview,
 });
 
