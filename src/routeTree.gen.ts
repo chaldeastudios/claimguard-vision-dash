@@ -9,38 +9,130 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardHospitalsRouteImport } from './routes/dashboard.hospitals'
+import { Route as DashboardClaimsRouteImport } from './routes/dashboard.claims'
+import { Route as DashboardClaimsIndexRouteImport } from './routes/dashboard.claims.index'
+import { Route as DashboardClaimsClaimIdRouteImport } from './routes/dashboard.claims.$claimId'
 
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardHospitalsRoute = DashboardHospitalsRouteImport.update({
+  id: '/hospitals',
+  path: '/hospitals',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardClaimsRoute = DashboardClaimsRouteImport.update({
+  id: '/claims',
+  path: '/claims',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardClaimsIndexRoute = DashboardClaimsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardClaimsRoute,
+} as any)
+const DashboardClaimsClaimIdRoute = DashboardClaimsClaimIdRouteImport.update({
+  id: '/$claimId',
+  path: '/$claimId',
+  getParentRoute: () => DashboardClaimsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard/claims': typeof DashboardClaimsRouteWithChildren
+  '/dashboard/hospitals': typeof DashboardHospitalsRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/claims/$claimId': typeof DashboardClaimsClaimIdRoute
+  '/dashboard/claims/': typeof DashboardClaimsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard/hospitals': typeof DashboardHospitalsRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/claims/$claimId': typeof DashboardClaimsClaimIdRoute
+  '/dashboard/claims': typeof DashboardClaimsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/dashboard/claims': typeof DashboardClaimsRouteWithChildren
+  '/dashboard/hospitals': typeof DashboardHospitalsRoute
+  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/claims/$claimId': typeof DashboardClaimsClaimIdRoute
+  '/dashboard/claims/': typeof DashboardClaimsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/dashboard/claims'
+    | '/dashboard/hospitals'
+    | '/dashboard/settings'
+    | '/dashboard/'
+    | '/dashboard/claims/$claimId'
+    | '/dashboard/claims/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/dashboard/hospitals'
+    | '/dashboard/settings'
+    | '/dashboard'
+    | '/dashboard/claims/$claimId'
+    | '/dashboard/claims'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/dashboard/claims'
+    | '/dashboard/hospitals'
+    | '/dashboard/settings'
+    | '/dashboard/'
+    | '/dashboard/claims/$claimId'
+    | '/dashboard/claims/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +140,87 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings': {
+      id: '/dashboard/settings'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/hospitals': {
+      id: '/dashboard/hospitals'
+      path: '/hospitals'
+      fullPath: '/dashboard/hospitals'
+      preLoaderRoute: typeof DashboardHospitalsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/claims': {
+      id: '/dashboard/claims'
+      path: '/claims'
+      fullPath: '/dashboard/claims'
+      preLoaderRoute: typeof DashboardClaimsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/claims/': {
+      id: '/dashboard/claims/'
+      path: '/'
+      fullPath: '/dashboard/claims/'
+      preLoaderRoute: typeof DashboardClaimsIndexRouteImport
+      parentRoute: typeof DashboardClaimsRoute
+    }
+    '/dashboard/claims/$claimId': {
+      id: '/dashboard/claims/$claimId'
+      path: '/$claimId'
+      fullPath: '/dashboard/claims/$claimId'
+      preLoaderRoute: typeof DashboardClaimsClaimIdRouteImport
+      parentRoute: typeof DashboardClaimsRoute
+    }
   }
 }
 
+interface DashboardClaimsRouteChildren {
+  DashboardClaimsClaimIdRoute: typeof DashboardClaimsClaimIdRoute
+  DashboardClaimsIndexRoute: typeof DashboardClaimsIndexRoute
+}
+
+const DashboardClaimsRouteChildren: DashboardClaimsRouteChildren = {
+  DashboardClaimsClaimIdRoute: DashboardClaimsClaimIdRoute,
+  DashboardClaimsIndexRoute: DashboardClaimsIndexRoute,
+}
+
+const DashboardClaimsRouteWithChildren = DashboardClaimsRoute._addFileChildren(
+  DashboardClaimsRouteChildren,
+)
+
+interface DashboardRouteChildren {
+  DashboardClaimsRoute: typeof DashboardClaimsRouteWithChildren
+  DashboardHospitalsRoute: typeof DashboardHospitalsRoute
+  DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardClaimsRoute: DashboardClaimsRouteWithChildren,
+  DashboardHospitalsRoute: DashboardHospitalsRoute,
+  DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
