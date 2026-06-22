@@ -90,10 +90,3 @@ function DashboardLayout() {
     </div>
   );
 }
-        <div className="px-6 py-8 md:px-10">
-          <Outlet />
-        </div>
-      </main>
-    </div>
-  );
-}
