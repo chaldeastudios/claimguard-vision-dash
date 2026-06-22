@@ -6,7 +6,6 @@ import { LogoMark } from "@/components/brand/icons";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   head: () => ({ meta: [{ title: "Sign in — ClaimGuard" }] }),
   component: AuthPage,
 });
