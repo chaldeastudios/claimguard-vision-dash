@@ -38,7 +38,6 @@ Diagnosis: ${claim.diagnosis_code} — ${claim.diagnosis}
 Services billed: ${(claim.services ?? []).join(", ")}
 Amount billed: KES ${claim.amount.toLocaleString("en-KE")}
 Submitted: ${claim.submitted_at}
-Existing rule-engine risk: ${claim.risk_level} (${claim.risk_score}/100)
 
 Analyze this claim for fraud, abuse, or billing irregularities.`;
 

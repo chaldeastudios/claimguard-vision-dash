@@ -74,9 +74,6 @@ export type Database = {
           id: string
           patient: string
           patient_id: string
-          reasons: Json
-          risk_level: string
-          risk_score: number
           services: string[]
           status: string
           submitted_at: string
@@ -91,9 +88,6 @@ export type Database = {
           id: string
           patient: string
           patient_id: string
-          reasons?: Json
-          risk_level: string
-          risk_score: number
           services?: string[]
           status?: string
           submitted_at: string
@@ -108,12 +102,33 @@ export type Database = {
           id?: string
           patient?: string
           patient_id?: string
-          reasons?: Json
-          risk_level?: string
-          risk_score?: number
           services?: string[]
           status?: string
           submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
           updated_at?: string
         }
         Relationships: []

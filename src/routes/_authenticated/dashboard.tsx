@@ -1,27 +1,52 @@
 import { Outlet, createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { LogoMark } from "@/components/brand/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut } from "lucide-react";
+import {
+  LogOut,
+  LayoutDashboard,
+  ListChecks,
+  Building2,
+  Settings as SettingsIcon,
+  Plus,
+  Bell,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({
-    meta: [{ title: "ClaimGuard — Reviewer Dashboard" }],
-  }),
+  head: () => ({ meta: [{ title: "ClaimGuard — Reviewer Dashboard" }] }),
   component: DashboardLayout,
 });
 
-const nav: Array<{ to: string; label: string; end?: boolean }> = [
-  { to: "/dashboard", label: "Overview", end: true },
-  { to: "/dashboard/claims", label: "Claims Queue" },
-  { to: "/dashboard/hospitals", label: "Hospitals" },
-  { to: "/dashboard/settings", label: "Settings" },
+const nav: Array<{ to: string; label: string; end?: boolean; Icon: React.ComponentType<{ className?: string }> }> = [
+  { to: "/dashboard", label: "Overview", end: true, Icon: LayoutDashboard },
+  { to: "/dashboard/claims", label: "Claims Queue", Icon: ListChecks },
+  { to: "/dashboard/claims/new", label: "New Claim", Icon: Plus },
+  { to: "/dashboard/hospitals", label: "Hospitals", Icon: Building2 },
+  { to: "/dashboard/settings", label: "Settings", Icon: SettingsIcon },
 ];
+
+function initialsOf(name?: string | null, email?: string | null) {
+  const src = (name && name.trim()) || (email && email.split("@")[0]) || "U";
+  const parts = src.split(/\s+|\./).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || src[0].toUpperCase();
+}
 
 function DashboardLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [user, setUser] = useState<{ name: string | null; email: string | null } | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      if (!u) return;
+      const name = (u.user_metadata?.full_name as string) || (u.user_metadata?.name as string) || null;
+      setUser({ name, email: u.email ?? null });
+    });
+  }, []);
+
   const isActive = (to: string, end?: boolean) =>
     end ? pathname === to : pathname === to || pathname.startsWith(to + "/");
 
@@ -32,6 +57,9 @@ function DashboardLayout() {
     navigate({ to: "/auth", replace: true });
   }
 
+  const displayName = user?.name || user?.email || "Reviewer";
+  const initials = initialsOf(user?.name, user?.email);
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       <aside className="hidden w-64 shrink-0 flex-col bg-[color:var(--sidebar)] text-[color:var(--sidebar-foreground)] md:flex">
@@ -40,26 +68,23 @@ function DashboardLayout() {
           <span className="font-serif text-xl">ClaimGuard</span>
         </Link>
         <nav className="mt-2 flex flex-col gap-1 px-3">
-          {nav.map((n) => (
+          {nav.map(({ to, label, end, Icon }) => (
             <Link
-              key={n.to}
-              to={n.to}
+              key={to}
+              to={to}
               className={
-                "rounded-xl px-3 py-2.5 text-sm transition-colors " +
-                (isActive(n.to, n.end)
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors " +
+                (isActive(to, end)
                   ? "bg-[color:var(--brand-orange)] text-white"
                   : "text-white/70 hover:bg-white/5 hover:text-white")
               }
             >
-              {n.label}
+              <Icon className="h-4 w-4" />
+              {label}
             </Link>
           ))}
         </nav>
-        {/* suppress unused */}
-        <span className="hidden">{pathname}</span>
-        <div className="mt-auto px-6 py-6 text-xs text-white/40">
-          Reviewer · Demo Mode
-        </div>
+        <div className="mt-auto px-6 py-6 text-xs text-white/40">Reviewer console</div>
       </aside>
       <main className="flex-1 overflow-x-hidden">
         <header className="flex items-center justify-between border-b border-border px-6 py-4 md:px-10">
@@ -67,11 +92,19 @@ function DashboardLayout() {
             Scheme · <span className="text-foreground">National Health Insurance</span>
           </div>
           <div className="flex items-center gap-3">
-            <div className="rounded-full bg-[color:var(--brand-cream)] px-3 py-1.5 text-xs text-foreground">
-              Last sync: just now
+            <button
+              type="button"
+              className="hidden h-9 w-9 items-center justify-center rounded-full bg-[color:var(--brand-cream)] text-foreground hover:bg-accent md:inline-flex"
+              aria-label="Notifications"
+            >
+              <Bell className="h-4 w-4" />
+            </button>
+            <div className="hidden flex-col items-end text-right md:flex">
+              <span className="text-xs font-medium text-foreground">{displayName}</span>
+              <span className="text-[10px] text-muted-foreground">{user?.email ?? "—"}</span>
             </div>
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--brand-brown)] text-sm font-medium text-[color:var(--brand-brown-foreground)]">
-              AM
+              {initials}
             </div>
             <button
               type="button"
