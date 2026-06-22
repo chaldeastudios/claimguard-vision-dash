@@ -1,5 +1,8 @@
-import { Outlet, createFileRoute, Link, useRouterState } from "@tanstack/react-router";
+import { Outlet, createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { LogoMark } from "@/components/brand/icons";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { LogOut } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
