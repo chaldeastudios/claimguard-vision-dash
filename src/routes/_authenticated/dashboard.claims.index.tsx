@@ -7,6 +7,7 @@ import {
   fmtKES,
   type RiskLevel,
 } from "@/lib/claims-api";
+import { Plus, Search, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/claims/")({
   component: ClaimsQueue,
@@ -27,16 +28,30 @@ function RiskBadge({ level, score }: { level: RiskLevel; score: number }) {
   );
 }
 
+function PendingBadge() {
+  return (
+    <span className="inline-flex animate-pulse items-center gap-2 rounded-full bg-[color:var(--brand-brown)]/15 px-3 py-1 text-xs font-medium text-[color:var(--brand-brown)]">
+      <Loader2 className="h-3 w-3 animate-spin" />
+      Analyzing…
+    </span>
+  );
+}
+
 function ClaimsQueue() {
   const { data: claims = [], isLoading } = useQuery({
     queryKey: ["claims"],
     queryFn: fetchClaims,
+    refetchInterval: (q) => {
+      const data = q.state.data;
+      if (!data) return false;
+      return data.some((c) => !c.analysis) ? 4000 : false;
+    },
   });
 
   const [q, setQ] = useState("");
-  const [risk, setRisk] = useState<"All" | RiskLevel>("All");
+  const [risk, setRisk] = useState<"All" | RiskLevel | "Pending">("All");
   const [facility, setFacility] = useState<string>("All");
-  const [sortKey, setSortKey] = useState<"score" | "amount" | "date">("score");
+  const [sortKey, setSortKey] = useState<"score" | "amount" | "date">("date");
 
   const rows = useMemo(() => {
     let r = claims.slice();
@@ -49,11 +64,12 @@ function ClaimsQueue() {
           c.patientId.toLowerCase().includes(s),
       );
     }
-    if (risk !== "All") r = r.filter((c) => c.riskLevel === risk);
+    if (risk === "Pending") r = r.filter((c) => !c.analysis);
+    else if (risk !== "All") r = r.filter((c) => (c.analysis?.risk_level as RiskLevel) === risk);
     if (facility !== "All") r = r.filter((c) => c.facility === facility);
     r.sort((a, b) =>
       sortKey === "score"
-        ? b.riskScore - a.riskScore
+        ? (b.analysis?.risk_score ?? -1) - (a.analysis?.risk_score ?? -1)
         : sortKey === "amount"
           ? b.amount - a.amount
           : +new Date(b.submittedAt) - +new Date(a.submittedAt),
@@ -63,30 +79,39 @@ function ClaimsQueue() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-4xl">
-          Claims <span className="accent-word">Queue</span>
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          {isLoading
-            ? "Loading…"
-            : `${rows.length} claims · sorted by ${sortKey === "score" ? "risk score" : sortKey === "amount" ? "amount" : "date"}`}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-4xl">
+            Claims <span className="accent-word">Queue</span>
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            {isLoading ? "Loading…" : `${rows.length} claims`}
+          </p>
+        </div>
+        <Link
+          to="/dashboard/claims/new"
+          className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-brown)] px-5 py-2.5 text-sm font-medium text-[color:var(--brand-brown-foreground)] hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" /> New Claim
+        </Link>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-[color:var(--brand-cream)] p-4">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search claim ID or patient…"
-          className="min-w-[220px] flex-1 rounded-full bg-background px-4 py-2 text-sm outline-none ring-0 placeholder:text-muted-foreground focus:ring-2 focus:ring-[color:var(--brand-brown)]/40"
-        />
+        <div className="relative min-w-[220px] flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search claim ID or patient…"
+            className="w-full rounded-full bg-background py-2 pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[color:var(--brand-brown)]/40"
+          />
+        </div>
         <select
           value={risk}
-          onChange={(e) => setRisk(e.target.value as "All" | RiskLevel)}
+          onChange={(e) => setRisk(e.target.value as typeof risk)}
           className="rounded-full bg-background px-4 py-2 text-sm"
         >
-          {["All", "High", "Medium", "Low"].map((r) => (
+          {["All", "High", "Medium", "Low", "Pending"].map((r) => (
             <option key={r}>{r}</option>
           ))}
         </select>
@@ -105,9 +130,9 @@ function ClaimsQueue() {
           onChange={(e) => setSortKey(e.target.value as "score" | "amount" | "date")}
           className="rounded-full bg-background px-4 py-2 text-sm"
         >
+          <option value="date">Submitted date</option>
           <option value="score">Risk score</option>
           <option value="amount">Amount</option>
-          <option value="date">Submitted date</option>
         </select>
       </div>
 
@@ -153,7 +178,14 @@ function ClaimsQueue() {
                   })}
                 </td>
                 <td className="px-5 py-3 text-right">
-                  <RiskBadge level={c.riskLevel} score={c.riskScore} />
+                  {c.analysis ? (
+                    <RiskBadge
+                      level={c.analysis.risk_level as RiskLevel}
+                      score={c.analysis.risk_score}
+                    />
+                  ) : (
+                    <PendingBadge />
+                  )}
                 </td>
               </tr>
             ))}

@@ -19,11 +19,12 @@ export interface Claim {
   diagnosis: string;
   services: string[];
   amount: number;
-  riskScore: number;
-  riskLevel: RiskLevel;
   submittedAt: string;
-  reasons: FraudReason[];
   status: string;
+}
+
+export interface ClaimWithAnalysis extends Claim {
+  analysis: AnalysisRow | null;
 }
 
 function rowToClaim(r: ClaimRow): Claim {
@@ -36,22 +37,28 @@ function rowToClaim(r: ClaimRow): Claim {
     diagnosis: r.diagnosis,
     services: r.services ?? [],
     amount: r.amount,
-    riskScore: r.risk_score,
-    riskLevel: r.risk_level as RiskLevel,
     submittedAt: r.submitted_at,
-    reasons: (r.reasons as unknown as FraudReason[]) ?? [],
     status: r.status,
   };
 }
 
-export async function fetchClaims(): Promise<Claim[]> {
-  const { data, error } = await supabase
-    .from("claims")
-    .select("*")
-    .order("risk_score", { ascending: false })
-    .limit(500);
+export async function fetchClaims(): Promise<ClaimWithAnalysis[]> {
+  const [{ data: claims, error }, { data: analyses }] = await Promise.all([
+    supabase.from("claims").select("*").order("submitted_at", { ascending: false }).limit(500),
+    supabase
+      .from("claim_risk_analysis")
+      .select("*")
+      .order("created_at", { ascending: false }),
+  ]);
   if (error) throw error;
-  return (data ?? []).map(rowToClaim);
+  const latestByClaim = new Map<string, AnalysisRow>();
+  for (const a of analyses ?? []) {
+    if (!latestByClaim.has(a.claim_id)) latestByClaim.set(a.claim_id, a);
+  }
+  return (claims ?? []).map((c) => ({
+    ...rowToClaim(c),
+    analysis: latestByClaim.get(c.id) ?? null,
+  }));
 }
 
 export async function fetchClaim(id: string): Promise<Claim | null> {
