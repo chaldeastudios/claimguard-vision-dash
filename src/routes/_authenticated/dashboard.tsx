@@ -20,8 +20,17 @@ const nav: Array<{ to: string; label: string; end?: boolean }> = [
 
 function DashboardLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isActive = (to: string, end?: boolean) =>
     end ? pathname === to : pathname === to || pathname.startsWith(to + "/");
+
+  async function handleSignOut() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-background">
