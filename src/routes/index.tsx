@@ -97,8 +97,9 @@ function Nav() {
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5"
+      className="fixed inset-x-0 top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md"
     >
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
       <Link to="/" className="flex items-center gap-2 text-[color:var(--brand-brown)]">
         <LogoMark className="h-9 w-9" />
         <span className="font-serif text-2xl tracking-tight text-foreground">ClaimGuard</span>
@@ -123,6 +124,7 @@ function Nav() {
         >
           Request a Demo
         </a>
+      </div>
       </div>
     </motion.header>
   );
@@ -722,7 +724,7 @@ function FooterCol({ title, links }: { title: string; links: Array<[string, stri
 
 function Landing() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-20">
       <Nav />
       <Hero />
       <Marquee />
