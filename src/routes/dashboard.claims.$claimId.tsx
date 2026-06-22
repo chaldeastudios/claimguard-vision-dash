@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { getClaim, fmtKES } from "@/lib/claims-data";
+import { getClaim, fmtKES, type Claim, type FraudReason } from "@/lib/claims-data";
 
 export const Route = createFileRoute("/dashboard/claims/$claimId")({
   loader: ({ params }) => {
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/dashboard/claims/$claimId")({
 });
 
 function ClaimDetail() {
-  const { claim: c } = Route.useLoaderData();
+  const { claim: c } = Route.useLoaderData() as { claim: Claim };
   const tone =
     c.riskLevel === "High"
       ? "bg-[color:var(--risk-high)]"
@@ -54,7 +54,7 @@ function ClaimDetail() {
           <div className="rounded-3xl bg-[color:var(--brand-cream)] p-7">
             <h2 className="font-serif text-xl">Why this was flagged</h2>
             <ol className="mt-5 space-y-4">
-              {c.reasons.map((r, i) => (
+              {c.reasons.map((r: FraudReason, i: number) => (
                 <li key={i} className="flex gap-4">
                   <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-brown)] text-xs font-medium text-white">
                     {i + 1}
@@ -90,7 +90,7 @@ function ClaimDetail() {
               <div className="col-span-2">
                 <dt className="text-muted-foreground">Services billed</dt>
                 <dd className="mt-1 flex flex-wrap gap-2">
-                  {c.services.map((s) => (
+                  {c.services.map((s: string) => (
                     <span key={s} className="rounded-full bg-background px-3 py-1 text-xs text-foreground">
                       {s}
                     </span>

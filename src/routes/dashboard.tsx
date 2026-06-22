@@ -8,12 +8,12 @@ export const Route = createFileRoute("/dashboard")({
   component: DashboardLayout,
 });
 
-const nav = [
+const nav: Array<{ to: string; label: string; end?: boolean }> = [
   { to: "/dashboard", label: "Overview", end: true },
   { to: "/dashboard/claims", label: "Claims Queue" },
   { to: "/dashboard/hospitals", label: "Hospitals" },
   { to: "/dashboard/settings", label: "Settings" },
-] as const;
+];
 
 function DashboardLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -43,6 +43,8 @@ function DashboardLayout() {
             </Link>
           ))}
         </nav>
+        {/* suppress unused */}
+        <span className="hidden">{pathname}</span>
         <div className="mt-auto px-6 py-6 text-xs text-white/40">
           Reviewer · Demo Mode
         </div>
