@@ -23,6 +23,11 @@ export const analyzeClaim = createServerFn({ method: "POST" })
     // AI provider resolution. Prefer a direct Google Gemini key (billed by
     // Google at list price, no gateway markup); fall back to the Lovable AI
     // gateway when only that is configured (e.g. inside the Lovable preview).
+    //
+    // Each provider ships an ordered list of candidate models. We try them in
+    // turn so a single model being overloaded (HTTP 503 "high demand", 429,
+    // or any transient 5xx) does not leave the whole analysis in a failed
+    // state — we just move on to the next model and keep going.
     const geminiKey = process.env.GEMINI_API_KEY;
     const lovableKey = process.env.LOVABLE_API_KEY;
     const provider = geminiKey
@@ -30,13 +35,24 @@ export const analyzeClaim = createServerFn({ method: "POST" })
           // Google's OpenAI-compatible endpoint — same request/response shape.
           endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
           apiKey: geminiKey,
-          model: "gemini-2.5-flash",
+          models: [
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+            "gemini-2.5-flash-lite",
+            "gemini-2.0-flash",
+          ],
         }
       : lovableKey
         ? {
             endpoint: "https://ai.gateway.lovable.dev/v1/chat/completions",
             apiKey: lovableKey,
-            model: "google/gemini-2.5-flash",
+            models: [
+              "google/gemini-2.5-flash",
+              "google/gemini-2.5-pro",
+              "google/gemini-2.5-flash-lite",
+              "openai/gpt-5-mini",
+              "openai/gpt-5",
+            ],
           }
         : null;
     if (!provider) {
@@ -63,42 +79,6 @@ Submitted: ${claim.submitted_at}
 
 Analyze this claim for fraud, abuse, or billing irregularities.`;
 
-    const model = provider.model;
-    const aiRes = await fetch(provider.endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${provider.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    if (!aiRes.ok) {
-      const txt = await aiRes.text();
-      throw new Error(`AI gateway ${aiRes.status}: ${txt.slice(0, 300)}`);
-    }
-    const aiJson = await aiRes.json();
-    const content: string = aiJson?.choices?.[0]?.message?.content ?? "";
-    let parsed: {
-      risk_score: number;
-      risk_level: "High" | "Medium" | "Low";
-      summary: string;
-      reasons: Array<{ title: string; detail: string }>;
-      recommendation: string;
-    };
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      throw new Error("AI returned non-JSON content");
-    }
-
     const Validate = z.object({
       risk_score: z.number().int().min(0).max(100),
       risk_level: z.enum(["High", "Medium", "Low"]),
@@ -109,7 +89,61 @@ Analyze this claim for fraud, abuse, or billing irregularities.`;
         .max(8),
       recommendation: z.string().min(1),
     });
-    const safe = Validate.parse(parsed);
+
+    // Try each candidate model in order. If one is overloaded or otherwise
+    // fails, fall through to the next instead of surfacing a failed state to
+    // the user. Only when *every* model has been exhausted do we throw.
+    let model = "";
+    let aiJson: unknown = null;
+    let safe: z.infer<typeof Validate> | null = null;
+    const attemptErrors: string[] = [];
+
+    for (const candidate of provider.models) {
+      try {
+        const aiRes = await fetch(provider.endpoint, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${provider.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: candidate,
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: userPrompt },
+            ],
+            response_format: { type: "json_object" },
+          }),
+        });
+
+        if (!aiRes.ok) {
+          const txt = await aiRes.text();
+          // 429 (rate limit) and 5xx (e.g. 503 high demand) are transient —
+          // another model may succeed, so keep looping.
+          throw new Error(`AI gateway ${aiRes.status}: ${txt.slice(0, 300)}`);
+        }
+
+        const json = await aiRes.json();
+        const content: string = json?.choices?.[0]?.message?.content ?? "";
+        const parsed = JSON.parse(content);
+        const validated = Validate.parse(parsed);
+
+        // Success — capture and stop trying further models.
+        model = candidate;
+        aiJson = json;
+        safe = validated;
+        break;
+      } catch (err) {
+        attemptErrors.push(`${candidate}: ${err instanceof Error ? err.message : String(err)}`);
+        // Continue to the next candidate model.
+      }
+    }
+
+    if (!safe) {
+      throw new Error(
+        `AI analysis failed across all models. Attempts:\n${attemptErrors.join("\n")}`,
+      );
+    }
 
     const { data: inserted, error: insertErr } = await context.supabase
       .from("claim_risk_analysis")
