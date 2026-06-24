@@ -20,46 +20,22 @@ export const analyzeClaim = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => Input.parse(data))
   .handler(async ({ data, context }) => {
-    // AI provider resolution. Prefer a direct Google Gemini key (billed by
-    // Google at list price, no gateway markup); fall back to the Lovable AI
-    // gateway when only that is configured (e.g. inside the Lovable preview).
+    // AI provider: direct Google Gemini (billed by Google at list price).
     //
-    // Each provider ships an ordered list of candidate models. We try them in
-    // turn so a single model being overloaded (HTTP 503 "high demand", 429,
-    // or any transient 5xx) does not leave the whole analysis in a failed
-    // state — we just move on to the next model and keep going.
+    // We try an ordered list of candidate models in turn so a single model
+    // being overloaded (HTTP 503 "high demand", 429, or any transient 5xx)
+    // does not leave the whole analysis in a failed state — we just move on
+    // to the next model and keep going.
     const geminiKey = process.env.GEMINI_API_KEY;
-    const lovableKey = process.env.LOVABLE_API_KEY;
-    const provider = geminiKey
-      ? {
-          // Google's OpenAI-compatible endpoint — same request/response shape.
-          endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-          apiKey: geminiKey,
-          models: [
-            "gemini-2.5-flash",
-            "gemini-2.5-pro",
-            "gemini-2.5-flash-lite",
-            "gemini-2.0-flash",
-          ],
-        }
-      : lovableKey
-        ? {
-            endpoint: "https://ai.gateway.lovable.dev/v1/chat/completions",
-            apiKey: lovableKey,
-            models: [
-              "google/gemini-2.5-flash",
-              "google/gemini-2.5-pro",
-              "google/gemini-2.5-flash-lite",
-              "openai/gpt-5-mini",
-              "openai/gpt-5",
-            ],
-          }
-        : null;
-    if (!provider) {
-      throw new Error(
-        "No AI provider configured. Set GEMINI_API_KEY (direct Google Gemini, recommended) or LOVABLE_API_KEY.",
-      );
+    if (!geminiKey) {
+      throw new Error("No AI provider configured. Set GEMINI_API_KEY (direct Google Gemini).");
     }
+    const provider = {
+      // Google's OpenAI-compatible endpoint — same request/response shape.
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      apiKey: geminiKey,
+      models: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite", "gemini-2.0-flash"],
+    };
 
     const { data: claim, error: claimErr } = await context.supabase
       .from("claims")
