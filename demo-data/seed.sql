@@ -1,5 +1,5 @@
 -- =============================================================================
--- ClaimGuard × openIMIS — Kenyan Demo Data Seed
+-- ClaimGuard × openIMIS — Kenyan Demo Data Seeds
 -- =============================================================================
 -- This script populates the openIMIS PostgreSQL database with realistic
 -- Kenyan demo data for development and demonstration purposes.
