@@ -49,6 +49,8 @@ services:
       - SECRET_KEY=django-insecure-claimguard-openimis-integration-key-100%
       - ALLOWED_HOSTS=*
       - OPENIMIS_MODULES_CONFIG=/app/openimis.json
+      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
     volumes:
       - ./openimis.json:/app/openimis.json
       - ./openimis-be-fraud_py:/opt/openimis/openimis-be-fraud_py

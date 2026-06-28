@@ -111,11 +111,18 @@ class FraudScoringService:
         except Exception as api_err:
             logger.warning(f"External fraud scorer connection offline, using rule-based score: {str(api_err)}")
 
+        # Sync result to live Supabase database for real-time dashboard updates
+        try:
+            cls._sync_to_supabase(claim, score, risk_level, reasons)
+        except Exception as sync_err:
+            logger.error(f"Failed to sync fraud analysis to Supabase: {str(sync_err)}")
+
         return {
             'score': score,
             'risk_level': risk_level,
             'reasons': reasons
         }
+
 
     @staticmethod
     def _get_diagnosis_benchmark(diagnosis_code):
@@ -130,3 +137,56 @@ class FraudScoringService:
             'E11': 8000.0,  # Type 2 diabetes mellitus
         }
         return benchmarks.get(diagnosis_code, 4000.0)
+
+    @classmethod
+    def _sync_to_supabase(cls, claim, score, risk_level, reasons):
+        """
+        Sends the processed claim details and the fraud analysis results
+        directly to the live Supabase REST API for real-time dashboard updates.
+        """
+        import os
+        supabase_url = os.environ.get("SUPABASE_URL")
+        # Use the anon key or service role key
+        supabase_key = os.environ.get("SUPABASE_KEY")
+        
+        if not supabase_url or not supabase_key:
+            logger.warning("Supabase configuration missing in environment variables. Skipping live sync.")
+            return
+
+        headers = {
+            "apikey": supabase_key,
+            "Authorization": f"Bearer {supabase_key}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates"
+        }
+
+        # 1. Prepare and sync claim entry to 'claims' table
+        claim_data = {
+            "id": str(claim.uuid),
+            "patient_name": f"{claim.insuree.first_name} {claim.insuree.last_name}" if claim.insuree else "Unknown Patient",
+            "facility_name": claim.health_facility.name if claim.health_facility else "Unknown Facility",
+            "diagnosis_code": claim.diagnoses.first().code if claim.diagnoses.first() else "N/A",
+            "diagnosis_name": claim.diagnoses.first().name if claim.diagnoses.first() else "N/A",
+            "amount": float(claim.claimed),
+            "currency": "KES",
+            "status": "flagged" if risk_level == "High" else "pending"
+        }
+
+        # Upsert the claim record into Supabase using POST with merge resolution
+        claim_res = requests.post(f"{supabase_url}/rest/v1/claims", json=claim_data, headers=headers)
+        if claim_res.status_code not in [200, 201]:
+            logger.error(f"Supabase Claim Sync failed (status {claim_res.status_code}): {claim_res.text}")
+            return
+
+        # 2. Prepare and sync risk analysis entry to 'claim_risk_analysis' table
+        analysis_data = {
+            "claim_id": str(claim.uuid),
+            "risk_score": float(score),
+            "risk_level": risk_level,
+            "reasons": reasons
+        }
+
+        analysis_res = requests.post(f"{supabase_url}/rest/v1/claim_risk_analysis", json=analysis_data, headers=headers)
+        if analysis_res.status_code not in [200, 201]:
+            logger.error(f"Supabase Claim Risk Analysis Sync failed (status {analysis_res.status_code}): {analysis_res.text}")
+
