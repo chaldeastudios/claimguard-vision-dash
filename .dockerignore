@@ -1,0 +1,11 @@
+node_modules
+.git
+.env
+demo-data
+openimis-be-fraud_py
+*.md
+.agents
+.lovable
+bun.lock
+.prettierrc
+.prettierignore

@@ -1,0 +1,33 @@
+{
+  "modules": [
+    {
+      "name": "core",
+      "pip": "openimis-be-core==1.2.0rc1"
+    },
+    {
+      "name": "claim",
+      "pip": "openimis-be-claim==1.2.0rc1"
+    },
+    {
+      "name": "api_fhir",
+      "pip": "openimis-be-api-fhir-r4==1.2.0rc1"
+    },
+    {
+      "name": "fraud",
+      "pip": "git+https://github.com/chaldeastudios/openimis-be-fraud_py.git@main"
+    }
+  ],
+  "configuration": {
+    "gender_codes": {
+      "M": "Male",
+      "F": "Female"
+    },
+    "audit_user_id": 1,
+    "fraud_detection": {
+      "risk_threshold": 70,
+      "auto_flag_high_risk": true,
+      "kenya_sha_rules_enabled": true,
+      "external_scorer_endpoint": "https://claimguard-fraud-engine.herokuapp.com/api/score"
+    }
+  }
+}
