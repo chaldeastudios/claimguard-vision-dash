@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   # ---------------------------------------------------------------------------
@@ -30,7 +30,7 @@ services:
   # openIMIS Django Backend
   # ---------------------------------------------------------------------------
   backend:
-    image: ghcr.io/openimis/openimis-be_py:latest
+    image: ghcr.io/openimis/openimis-be:develop
     container_name: openimis-backend
     restart: always
     depends_on:
@@ -61,7 +61,7 @@ services:
   # openIMIS React Frontend
   # ---------------------------------------------------------------------------
   frontend:
-    image: ghcr.io/openimis/openimis-fe:latest
+    image: ghcr.io/openimis/openimis-fe:develop
     container_name: openimis-frontend
     restart: always
     depends_on:
