@@ -30,7 +30,7 @@ services:
   # openIMIS Django Backend
   # ---------------------------------------------------------------------------
   backend:
-    image: openimis/openimis_be:latest
+    image: openimis/backend:latest
     container_name: openimis-backend
     restart: always
     depends_on:
@@ -61,7 +61,7 @@ services:
   # openIMIS React Frontend
   # ---------------------------------------------------------------------------
   frontend:
-    image: openimis/openimis_fe:latest
+    image: openimis/frontend:latest
     container_name: openimis-frontend
     restart: always
     depends_on:
