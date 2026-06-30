@@ -48,6 +48,12 @@ this repo's `openimis.json` or the `fraud` module redeploy automatically.
 
 ---
 
+## Step 0 — Starting over (optional)
+
+If a previous attempt is misconfigured, delete it rather than untangling it:
+project canvas → **Settings** (top right) → **Danger** tab → **Delete Project**.
+Then start fresh at Step 1.
+
 ## Step 1 — Create the project
 
 1. [railway.com](https://railway.com) → **New Project** → **Empty Project**.
@@ -61,26 +67,35 @@ this repo's `openimis.json` or the `fraud` module redeploy automatically.
 2. Rename the service to `db` (the env files in `railway/` and the
    `${{db.RAILWAY_PRIVATE_DOMAIN}}` references assume this name).
 3. **Settings → Volumes** → add a volume mounted at `/var/lib/postgresql/data`.
-   Without this, every redeploy wipes the database.
+   Without this, every redeploy wipes the database. If "Volumes" doesn't
+   appear in Settings: deploy the service once first (even a failing deploy
+   counts), or check the service's region isn't a "metal" region (volumes
+   aren't supported there yet — switch regions if so).
 4. **Variables** → paste in the contents of `railway/db.env.example`, filling
    in a real `POSTGRES_PASSWORD` (`openssl rand -base64 32`).
 5. Deploy. Wait for it to report healthy before moving on.
 
-### Loading demo data
+### Loading demo data (no local tools required)
 
 `demo-data/seed.sql` (the Kenyan hospitals/insurees/claims/fraud scores from
 the README) needs to run once against this database — it's not auto-applied
-by the image.
+by the image. Do this entirely inside Railway's browser-based **Shell**
+(connects straight into the running `db` container) — no TCP proxy, no local
+`psql` install needed:
 
-1. **Settings → Networking → Public Networking** → generate a TCP proxy for
-   port `5432`. Note the host/port it gives you.
-2. From your machine:
-   ```bash
-   psql "postgresql://postgres:<POSTGRES_PASSWORD>@<proxy-host>:<proxy-port>/openimis" \
-     -f demo-data/seed.sql
+1. Open the `db` service → find the **Shell** tab (a terminal that opens
+   directly inside the container).
+2. Fetch the seed file from this public repo and run it:
+   ```sh
+   apt-get update && apt-get install -y curl   # if curl isn't already present
+   curl -fsSL https://raw.githubusercontent.com/chaldeastudios/claimguard-vision-dash/main/demo-data/seed.sql -o /tmp/seed.sql
+   PGPASSWORD=$POSTGRES_PASSWORD psql -U postgres -d openimis -f /tmp/seed.sql
    ```
-3. Turn the TCP proxy back off once you're done — there's no reason to leave
-   Postgres internet-reachable between sessions.
+   If the image is Alpine-based and `apt-get` isn't found, use `apk add curl`
+   instead. `POSTGRES_PASSWORD` is already set as an env var inside this
+   exact container, so nothing needs to be typed by hand.
+3. Verify: `psql -U postgres -d openimis -c "SELECT count(*) FROM claim_claim;"`
+   should return a non-zero count.
 
 ## Step 3 — `backend` service (Django + fraud module)
 
