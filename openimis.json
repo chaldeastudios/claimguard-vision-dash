@@ -14,7 +14,7 @@
     },
     {
       "name": "fraud",
-      "pip": "git+https://github.com/chaldeastudios/openimis-be-fraud_py.git@main"
+      "pip": "git+https://github.com/chaldeastudios/claimguard-vision-dash.git@main#egg=openimis-be-fraud&subdirectory=openimis-be-fraud_py"
     }
   ],
   "configuration": {

@@ -55,6 +55,11 @@ ClaimGuard detects fraudulent patterns in insurance claims — patient velocity 
 
 ## Quick Start
 
+These steps run the full stack locally with Docker Compose. To deploy the
+openIMIS stack (Postgres + backend + frontend) to a remote, always-on host
+instead of a laptop — recommended for demos — see
+[`DEPLOY_RAILWAY.md`](DEPLOY_RAILWAY.md).
+
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/chaldeastudios/claimguard-vision-dash.git
