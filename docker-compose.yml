@@ -33,6 +33,7 @@ services:
     image: ghcr.io/openimis/openimis-be:develop
     container_name: openimis-backend
     restart: always
+    command: start
     depends_on:
       db:
         condition: service_healthy
@@ -71,6 +72,7 @@ services:
     environment:
       - BACKEND_URL=http://backend:8000
       - PORT=3000
+      - OPENSEARCH_BASIC_TOKEN=dummy
     networks:
       - openimis-net
 
