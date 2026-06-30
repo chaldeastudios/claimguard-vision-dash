@@ -6,6 +6,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { nitro } from "nitro/vite";
 
 export default defineConfig({
+  base: "/claimguard/",
   plugins: [
     tanstackStart({
       server: {

@@ -5,14 +5,15 @@ services:
   # PostgreSQL Database
   # ---------------------------------------------------------------------------
   db:
-    image: postgres:15-alpine
+    image: ghcr.io/openimis/openimis-pgsql:develop
     container_name: openimis-db
     restart: always
     shm_size: 256mb
     environment:
-      POSTGRES_DB: openimis
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
+      - POSTGRES_DB=openimis
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgrespassword
+      - DEMO_DATASET=true
     volumes:
       - openimis_db_data:/var/lib/postgresql/data
       - ./demo-data:/demo-data
@@ -68,10 +69,10 @@ services:
     depends_on:
       - backend
     ports:
-      - "3000:3000"
+      - "3000:80"
     environment:
       - BACKEND_URL=http://backend:8000
-      - PORT=3000
+      - PORT=80
       - OPENSEARCH_BASIC_TOKEN=dummy
     networks:
       - openimis-net
