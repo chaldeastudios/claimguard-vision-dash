@@ -28,6 +28,37 @@ services:
       - openimis-net
 
   # ---------------------------------------------------------------------------
+  # openIMIS Django Backend — one-shot migration/fixture step
+  # ---------------------------------------------------------------------------
+  # `start` (below) only launches the web server — it never runs migrations.
+  # That's a separate `init` subcommand in the image's entrypoint (migrate +
+  # load_fixtures, then exits). Without this, every query against a fresh db
+  # fails with `relation "core_ModuleConfiguration" does not exist`.
+  backend-init:
+    image: ghcr.io/openimis/openimis-be:develop
+    container_name: openimis-backend-init
+    command: init
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_NAME=openimis
+      - DB_USER=postgres
+      - DB_PASSWORD=postgrespassword
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-claimguard-openimis-integration-key-100%
+      - ALLOWED_HOSTS=*
+      - OPENIMIS_MODULES_CONFIG=/app/openimis.json
+    volumes:
+      - ./openimis.json:/app/openimis.json
+      - ./openimis-be-fraud_py:/opt/openimis/openimis-be-fraud_py
+    networks:
+      - openimis-net
+
+  # ---------------------------------------------------------------------------
   # openIMIS Django Backend
   # ---------------------------------------------------------------------------
   backend:
@@ -36,8 +67,8 @@ services:
     restart: always
     command: start
     depends_on:
-      db:
-        condition: service_healthy
+      backend-init:
+        condition: service_completed_successfully
     ports:
       - "8000:8000"
     environment:
