@@ -20,30 +20,16 @@ export const analyzeClaim = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => Input.parse(data))
   .handler(async ({ data, context }) => {
-    // AI provider resolution. Prefer a direct Google Gemini key (billed by
-    // Google at list price, no gateway markup); fall back to the Lovable AI
-    // gateway when only that is configured (e.g. inside the Lovable preview).
     const geminiKey = process.env.GEMINI_API_KEY;
-    const lovableKey = process.env.LOVABLE_API_KEY;
-    const provider = geminiKey
-      ? {
-          // Google's OpenAI-compatible endpoint — same request/response shape.
-          endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-          apiKey: geminiKey,
-          model: "gemini-2.5-flash",
-        }
-      : lovableKey
-        ? {
-            endpoint: "https://ai.gateway.lovable.dev/v1/chat/completions",
-            apiKey: lovableKey,
-            model: "google/gemini-2.5-flash",
-          }
-        : null;
-    if (!provider) {
-      throw new Error(
-        "No AI provider configured. Set GEMINI_API_KEY (direct Google Gemini, recommended) or LOVABLE_API_KEY.",
-      );
+    if (!geminiKey) {
+      throw new Error("No AI provider configured. Set GEMINI_API_KEY.");
     }
+    const provider = {
+      // Google's OpenAI-compatible endpoint — same request/response shape.
+      endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      apiKey: geminiKey,
+      model: "gemini-2.5-flash",
+    };
 
     const { data: claim, error: claimErr } = await context.supabase
       .from("claims")

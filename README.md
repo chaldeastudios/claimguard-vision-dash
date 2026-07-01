@@ -197,6 +197,32 @@ docker exec -it openimis-backend python manage.py test fraud
 
 ---
 
+## Known Limitations
+
+- **Synthetic data.** The fraud scoring is demonstrated against a seeded Kenyan
+  demo dataset, not live SHA/NHIF claims. The rule thresholds (amount-vs-benchmark
+  ratios, 7-day duplicate window, 14-day patient-velocity window) are calibrated
+  for the demo, not tuned against a labelled fraud corpus, so no precision/recall
+  figures are claimed.
+- **Rule-based scoring, with an optional ML hook.** The default engine is
+  transparent heuristics; an external ML scorer can be plugged in via
+  `external_scorer_endpoint` in `openimis.json` but is not required to run.
+- **Dashboard reads from a Supabase mirror, not openIMIS directly.** The reviewer
+  dashboard reads `claims` / `claim_risk_analysis` from Supabase, which the
+  backend writes to after scoring. This decouples the UI from the openIMIS
+  GraphQL API for demo reliability, but means the dashboard reflects openIMIS
+  state only as of the last sync.
+- **AI analysis requires a Gemini API key.** The "Analyze" action in Claim Detail
+  calls Google Gemini directly and needs `GEMINI_API_KEY` set; without it, claims
+  still carry their seeded heuristic scores but on-demand AI review is unavailable.
+- **Single-tenant auth.** RLS policies grant any authenticated user full read/write
+  — appropriate for one internal reviewer team, not multi-scheme tenancy.
+- **Near-duplicate detection scope.** openIMIS core already rejects exact duplicates;
+  this module targets near-duplicates and cross-facility patterns. Fuzzy matching is
+  currently exact-field within a time window, not string-similarity based.
+
+---
+
 ## License
 
-GNU AGPL v3 — as required by the openIMIS ecosystem.
+GNU AGPL v3 — as required by the openIMIS ecosystem. Full text in [`LICENSE`](LICENSE).

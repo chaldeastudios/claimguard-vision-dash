@@ -22,9 +22,9 @@ Two architecturally separate things are being built:
 
 1. **A real OpenIMIS backend module** (`openimis-be-fraud_py`) — Django, hooks into OpenIMIS's actual claims signal pipeline. This is the "true" Track 1 deliverable: a real extension to OpenIMIS, registered via `openimis.json`, using the documented `signal_mutation_module_after_mutating["claim"]` signal pattern (same pattern used by the official openIMIS-AI specification). It listens for `SubmitClaimMutation`, runs fraud scoring, and writes a `FraudScore` record back.
 
-2. **A standalone frontend app** (built in Lovable, NOT inside the OpenIMIS frontend module system) — this is a fraud review dashboard for insurer-side reviewers. Lovable can't attach to an existing repo or be registered as a real `openimis-fe_js` module, so this is a companion web app that will eventually talk to the backend via API, not something embedded inside OpenIMIS's actual UI shell. In the pitch, this is framed honestly as a companion reviewer tool consuming OpenIMIS claims data via API — not literally embedded in OpenIMIS.
+2. **A standalone frontend app** (originally scaffolded with an external AI website builder, NOT inside the OpenIMIS frontend module system) — this is a fraud review dashboard for insurer-side reviewers. It's a companion web app that talks to the backend via API, not something embedded inside OpenIMIS's actual UI shell. In the pitch, this is framed honestly as a companion reviewer tool consuming OpenIMIS claims data via API — not literally embedded in OpenIMIS.
 
-If Claude Code is being used on the **backend/OpenIMIS module repo**, focus on item 1. If it's being used on the **Lovable-exported frontend repo**, focus on item 2 and its current state (see below).
+If Claude Code is being used on the **backend/OpenIMIS module repo**, focus on item 1. If it's being used on the **frontend dashboard repo**, focus on item 2 and its current state (see below).
 
 ## Backend module — technical plan
 
@@ -61,7 +61,7 @@ If Claude Code is being used on the **backend/OpenIMIS module repo**, focus on i
 
 ## Frontend — current state and direction
 
-Built in **Lovable** (lovable.dev), which cannot attach to an existing GitHub repo while building — it generates its own. If this is being picked up in Claude Code now, it likely means the Lovable-generated repo has been exported/connected to GitHub and further dev is continuing here.
+Originally scaffolded with an external AI website builder that generates its own repo rather than attaching to an existing one. That tool's runtime dependency, private registry references, and cloud-auth integration have since been fully removed from this codebase — auth runs on the team's own named Supabase project, and AI claim analysis calls Google's Gemini API directly.
 
 **Brand identity** (locked in, do not deviate without reason): adapted from a reference brand called "Mindoor," reframed for fraud detection. Key visual rules:
 - Warm off-white background `rgb(255,254,251)`, never pure white/cool gray.
@@ -78,27 +78,21 @@ Built in **Lovable** (lovable.dev), which cannot attach to an existing GitHub re
 - `/dashboard` — separate visual mode, app-shell layout (sidebar nav: Overview, Claims Queue, Hospitals, Settings), same brand tokens but dashboard layout patterns.
   - `/dashboard` (Overview): 4 KPI cards, risk distribution chart, recent high-risk claims list.
   - `/dashboard/claims`: full claims queue table — Claim ID, Patient, Facility, Diagnosis, Amount (KES), Risk Score, Risk Level badge, Submitted Date. Sortable, filterable (risk level, date range, hospital), searchable.
-  - Claim Detail (modal/slide-over/route — implementation detail left to Lovable): full claim metadata, risk score, "Why this was flagged" reasons list, Approve/Flag for Investigation/Reject buttons.
+  - Claim Detail (`dashboard.claims.$claimId.tsx`): full claim metadata, risk score, "Why this was flagged" reasons list (with a graceful "Not yet analyzed" state), Approve/Flag for Investigation/Reject buttons.
 
-**Auth — IMPORTANT, in progress as of this handoff**:
-- Auth is being built with **Supabase Auth**, connected to an existing Supabase organization and project both named **"ClaimGuard"**.
-- **Lovable Cloud must NOT be used.** Lovable Cloud is Lovable's own resold/managed Supabase backend and is the default path the moment backend/auth functionality is requested — it must be explicitly avoided in favor of linking directly to the named external Supabase org/project. If you're continuing this work and see a Lovable Cloud project instead of the named Supabase org, that's a mistake to fix, not a state to build on top of.
-- Sign In / Sign Up pages should match the established brand identity exactly (not a generic auth template look).
-- Successful auth → redirect to `/dashboard`. A previous placeholder behavior ("Sign In just navigates to /dashboard with no real auth") is meant to be fully replaced by real Supabase auth, not left in place alongside it.
+**Auth — done**:
+- Real **Supabase Auth**, connected to the named external "ClaimGuard" Supabase org/project (not a bundled cloud-auth service — that path was explicitly avoided and has since been fully removed from the codebase).
+- Email/password sign in and sign up (`src/routes/auth.tsx`) match the established brand identity. There is no social/OAuth sign-in currently — it was removed along with the third-party cloud-auth SDK it depended on; if OAuth is wanted later, wire it through Supabase's own OAuth provider config, not a bundled auth service.
+- Successful auth → redirect to `/dashboard`.
 
-**Data — in progress as of this handoff**:
-- All mock/hardcoded claims data is meant to be migrated OUT of the frontend codebase and INTO real Supabase tables. By the time this file is being read, check whether that migration is complete — if mock data still exists in the repo, that's leftover work, not the intended end state.
-- Minimum tables:
-  - `claims` — claim identifier, patient name, hospital/facility name, diagnosis code/name, claim amount, currency, submitted date, `status` (pending/approved/rejected/flagged — maps to the Approve/Flag/Reject buttons).
-  - `claim_risk_analysis` — FK to claim, risk score (0–100), risk level (High/Medium/Low), reasons (array/JSON), analyzed_at timestamp. This is where AI-generated fraud analysis results land.
-  - Possibly a `hospitals` table for normalization (left to implementer judgment).
-- RLS enabled on all tables. Policy intent: only authenticated users can read/write — simple authenticated-user policies, not per-row ownership rules (single internal team for now, not multi-tenant).
-- Mock data (Kenyan names, hospital names like Kenyatta National Hospital / Aga Khan University Hospital / Nakuru Level 5 Hospital / Moi Teaching and Referral Hospital, ICD-10-style codes, KES amounts) was seeded into these tables rather than discarded, so the demo stays populated.
-- Approve/Flag for Investigation/Reject buttons should write to the `status` column on the real claim row, with the UI reflecting the update.
+**Data — done**:
+- `claims` and `claim_risk_analysis` tables live in `supabase/migrations/`, both with RLS enabled (authenticated-user policies, not per-row ownership — single internal team, not multi-tenant).
+- Demo data (Kenyan names, hospital names like Kenyatta National Hospital / Aga Khan University Hospital / Nakuru Level 5 Hospital / Moi Teaching and Referral Hospital, ICD-10-style codes, KES amounts) lives in `src/lib/claims-data.ts` and is seeded into Supabase idempotently via `seedClaims` (`src/lib/seed.functions.ts`), called from the dashboard route — not hardcoded into UI components.
+- Approve/Flag for Investigation/Reject buttons write to the `status` column on the real claim row, with the UI reflecting the update.
 
-**AI integration — in progress as of this handoff**:
-- Uses Lovable's built-in AI connector (Gemini/GPT access, no separate API key setup) — not a custom integration from scratch.
-- Trigger: likely a manual "Analyze" button in Claim Detail (decided over fully-automatic-on-submit, for easier demo control — confirm this is still the chosen approach).
+**AI integration — done**:
+- Calls Google's Gemini API directly (`gemini-2.5-flash`, `GEMINI_API_KEY` env var) — no third-party AI gateway.
+- Trigger: manual "Analyze" button in Claim Detail (decided over fully-automatic-on-submit, for easier demo control).
 - The AI call sends claim data (diagnosis, amount, hospital, services billed, etc.) and should return structured JSON: risk score (0–100), risk level (High/Medium/Low), 2–4 plain-language reasons.
 - Response gets written to `claim_risk_analysis`, linked to the claim.
 - Claim Detail's "Why this was flagged" section should pull the latest real analysis from this table — with a graceful "Not yet analyzed" state for claims with no analysis yet, rather than broken/empty UI.
