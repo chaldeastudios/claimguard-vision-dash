@@ -52,6 +52,13 @@ services:
       - SECRET_KEY=django-insecure-claimguard-openimis-integration-key-100%
       - ALLOWED_HOSTS=*
       - OPENIMIS_MODULES_CONFIG=/app/openimis.json
+      # The openimis-fe frontend's bundled nginx forwards requests unchanged
+      # to whatever path it received (no prefix stripping) — it always calls
+      # ${REACT_APP_API_URL}/graphql, i.e. "api/graphql" by default. Django's
+      # own urls.py builds its routes as "%sgraphql" % SITE_ROOT(), so this
+      # tells Django to register at "api/graphql" to match what the frontend
+      # actually requests, instead of bare "/graphql".
+      - SITE_ROOT=api/
     volumes:
       - ./openimis.json:/app/openimis.json
       - ./openimis-be-fraud_py:/opt/openimis/openimis-be-fraud_py
@@ -82,6 +89,13 @@ services:
       - SECRET_KEY=django-insecure-claimguard-openimis-integration-key-100%
       - ALLOWED_HOSTS=*
       - OPENIMIS_MODULES_CONFIG=/app/openimis.json
+      # The openimis-fe frontend's bundled nginx forwards requests unchanged
+      # to whatever path it received (no prefix stripping) — it always calls
+      # ${REACT_APP_API_URL}/graphql, i.e. "api/graphql" by default. Django's
+      # own urls.py builds its routes as "%sgraphql" % SITE_ROOT(), so this
+      # tells Django to register at "api/graphql" to match what the frontend
+      # actually requests, instead of bare "/graphql".
+      - SITE_ROOT=api/
       - SUPABASE_URL=${VITE_SUPABASE_URL}
       - SUPABASE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
     volumes:
