@@ -38,6 +38,7 @@ ClaimGuard detects fraudulent patterns in insurance claims — patient velocity 
 | Service | Container | Port | Description |
 |---|---|---|---|
 | `db` | `openimis-db` | 5432 | PostgreSQL 15 database with Kenyan demo data |
+| `backend-init` | `openimis-backend-init` | — | One-shot: runs migrations + fixtures, then exits |
 | `backend` | `openimis-backend` | 8000 | Django backend with ClaimGuard fraud module |
 | `frontend` | `openimis-frontend` | 3000 | openIMIS React SPA |
 | `claimguard-dash` | `claimguard-dashboard` | 5173 | ClaimGuard fraud review dashboard |
@@ -55,10 +56,11 @@ ClaimGuard detects fraudulent patterns in insurance claims — patient velocity 
 
 ## Quick Start
 
-These steps run the full stack locally with Docker Compose. To deploy the
-openIMIS stack (Postgres + backend + frontend) to a remote, always-on host
-instead of a laptop — recommended for demos — see
-[`DEPLOY_RAILWAY.md`](DEPLOY_RAILWAY.md).
+Running this locally via Docker Compose is required, not optional — the
+hackathon's own pre-event checklist verifies a working local Docker stack at
+registration, and the live demo happens from what's running in the room. See
+the [hackathon handbook](https://openimis.atlassian.net/wiki/spaces/OP) for
+the full pre-event setup requirements.
 
 ### 1. Clone the Repository
 ```bash
@@ -70,7 +72,9 @@ cd claimguard-vision-dash
 ```bash
 docker-compose up -d --build
 ```
-Wait for all 5 containers to report healthy (approximately 60–90 seconds on first run).
+Wait for all 6 containers to report healthy (approximately 60–90 seconds on
+first run). `backend-init` runs migrations + fixtures once and exits — that's
+expected, it won't show as "healthy" like the long-running services.
 
 ### 3. Load Demo Data
 ```bash
