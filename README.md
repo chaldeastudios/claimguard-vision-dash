@@ -85,10 +85,15 @@ This loads 5 Kenyan hospitals, 12 insurees, 15 claims, and 8 fraud scores.
 ### 4. Verify
 | What | URL | Expected |
 |---|---|---|
-| openIMIS Portal | http://localhost | Login screen (admin / admin) |
-| GraphiQL Explorer | http://localhost/graphql | Interactive GraphQL IDE |
+| openIMIS Portal | https://localhost:8443 | Login screen (admin / admin) — browser will warn about the self-signed cert; click through it (Advanced → Proceed) |
+| GraphiQL Explorer | http://localhost:8000/graphql | Interactive GraphQL IDE |
 | ClaimGuard Dashboard | http://localhost/claimguard/ | Fraud review dashboard |
 | Backend API Direct | http://localhost:8000/graphql | GraphQL endpoint (direct) |
+
+> The `frontend` image bakes in its own self-signed TLS cert and always
+> redirects `/` to `https://<host>/front/` — it isn't built to be served
+> plain-HTTP behind a reverse proxy. Use `https://localhost:8443` directly
+> for the openIMIS UI rather than going through the gateway on port 80.
 
 ---
 
