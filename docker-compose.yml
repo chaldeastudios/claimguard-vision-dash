@@ -103,9 +103,12 @@ services:
       - "3000:80"
       # The image bakes in a self-signed cert and always redirects / to
       # https://<host>/front/ — it isn't built to be served plain-HTTP behind
-      # a reverse proxy. Publish its HTTPS port directly and use it for the
-      # openIMIS UI; accept the self-signed cert warning once in the browser.
-      - "8443:443"
+      # a reverse proxy. Publish its HTTPS port directly (as the real,
+      # default 443 — its own generated redirects target the default HTTPS
+      # port and drop any custom port number, so a non-standard host port
+      # like 8443 breaks its own redirect). Accept the self-signed cert
+      # warning once in the browser.
+      - "443:443"
     environment:
       - BACKEND_URL=http://backend:8000
       - PORT=80
