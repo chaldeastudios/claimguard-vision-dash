@@ -115,10 +115,32 @@ by the image. Do this entirely inside Railway's browser-based **Shell**
 5. **Settings → Networking** → generate a public domain. This becomes
    `${{backend.RAILWAY_PUBLIC_DOMAIN}}`, used by `ALLOWED_HOSTS` and by the
    `frontend` service in Step 4.
-6. Deploy. Tail the build logs — first boot needs to (a) `pip install` the
-   `fraud` module from the monorepo, (b) run migrations, (c) bind the
-   `signal_mutation_module_after_mutating["claim"]` hook on `ready()`.
-7. Smoke test: `https://<backend-domain>/graphql` should load GraphiQL.
+6. **Settings → Deploy → Pre-Deploy Command**, set to exactly:
+   ```
+   bash /openimis-be/script/entrypoint.sh init
+   ```
+   This runs `manage.py migrate` + `load_fixtures` before every deploy. It's
+   required — the image's `start` command (which `railway/backend.Dockerfile`
+   sets as `CMD`) only launches the web server; it never migrates. Without
+   this, every query fails with `relation "core_ModuleConfiguration" does
+   not exist` because the demo Postgres image's `DEMO_DATASET=true` only
+   loads openIMIS's reference-data SQL dump — Django's own migration-tracked
+   tables (`core_ModuleConfiguration`, `django_content_type`, etc.) are a
+   separate mechanism that only `manage.py migrate` creates. Neither the
+   original `docker-compose.yml` nor a Railway "Custom Start Command"
+   override handle this — see the note below on why `CMD` beats a start
+   command override here.
+7. Deploy. First boot takes a few minutes: `pip install` the `fraud` module
+   from the monorepo, then several hundred Django migrations, then
+   `load_fixtures`, then the server binds the port.
+8. Smoke test: `https://<backend-domain>/graphql` should load GraphiQL.
+
+> **Do not use Railway's "Custom Start Command" field for this service.**
+> It replaces the base image's `ENTRYPOINT` entirely instead of supplying
+> an argument to it (unlike Compose's `command: start`), and fails with
+> `executable "start" could not be found`. `railway/backend.Dockerfile`
+> already sets `CMD ["start"]`, which correctly inherits the base image's
+> `ENTRYPOINT` — leave the Custom Start Command field empty.
 
 ## Step 4 — `frontend` service (openIMIS React SPA)
 
