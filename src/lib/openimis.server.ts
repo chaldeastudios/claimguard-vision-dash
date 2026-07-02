@@ -108,7 +108,11 @@ async function graphqlRequest<T>(query: string, variables?: Record<string, unkno
   const doFetch = (token: string) =>
     fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `JWT ${token}` },
+      // This deployment's GRAPHQL_JWT settings set JWT_AUTH_HEADER_PREFIX to
+      // "Bearer" (not django-graphql-jwt's own default of "JWT") -- using the
+      // wrong prefix doesn't error, it just silently leaves the request
+      // unauthenticated, so every resolver's permission check fails.
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ query, variables }),
     });
 

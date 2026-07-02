@@ -49,7 +49,7 @@ console.log("\n--- Step 2: claims query (same shape as openimis.server.ts) ---")
 try {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `JWT ${token}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({
       query: `query($first: Int) {
         claims(first: $first) {
