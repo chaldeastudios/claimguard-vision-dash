@@ -35,7 +35,9 @@ services:
   # load_fixtures, then exits). Without this, every query against a fresh db
   # fails with `relation "core_ModuleConfiguration" does not exist`.
   backend-init:
-    image: ghcr.io/openimis/openimis-be:develop
+    build:
+      context: .
+      dockerfile: railway/backend.Dockerfile
     container_name: openimis-backend-init
     command: init
     depends_on:
@@ -69,7 +71,9 @@ services:
   # openIMIS Django Backend
   # ---------------------------------------------------------------------------
   backend:
-    image: ghcr.io/openimis/openimis-be:develop
+    build:
+      context: .
+      dockerfile: railway/backend.Dockerfile
     container_name: openimis-backend
     restart: always
     command: start

@@ -1,12 +1,23 @@
-# Railway builds this from the repo root (Root Directory: ".", Dockerfile Path: "railway/backend.Dockerfile").
+# Used both by Railway (Root Directory: ".", Dockerfile Path:
+# "railway/backend.Dockerfile") and by local docker-compose.yml (backend
+# and backend-init both build: from this file).
 #
-# Why this exists: docker-compose.yml bind-mounts ./openimis.json into the official
-# ghcr.io/openimis/openimis-be image for local dev. Railway's "deploy from public image"
-# services can't bind-mount repo files, so the same config has to be baked into the
-# image at build time instead.
+# Why a custom build instead of the plain ghcr.io/openimis/openimis-be
+# image: (1) it needs openimis.json baked in -- Railway's image-sourced
+# services can't bind-mount repo files the way Compose can, and (2) the
+# fraud module needs to be actually pip-installed, which the base image's
+# own runtime "install modules if openimis.json looks broken" heuristic
+# does not reliably do for a custom third module (see below).
 FROM ghcr.io/openimis/openimis-be:develop
 
 COPY openimis.json /app/openimis.json
+
+# Don't rely on the image's own "install modules if openimis.json doesn't
+# look OK" runtime heuristic -- it only checks that openimis.json parses,
+# not that every module it lists is actually importable, so our custom
+# fraud module silently never gets installed through that path. Install it
+# explicitly at build time instead, so it's guaranteed present regardless.
+RUN pip install --no-cache-dir "git+https://github.com/chaldeastudios/claimguard-vision-dash.git@main#egg=openimis-be-fraud&subdirectory=openimis-be-fraud_py"
 
 # The base image's ENTRYPOINT is a script that dispatches on its first arg
 # (start, manage, worker, etc — see docker-compose.yml's `command: start`).
