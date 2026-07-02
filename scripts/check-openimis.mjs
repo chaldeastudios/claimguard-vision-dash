@@ -9,6 +9,10 @@ const url = process.env.OPENIMIS_GRAPHQL_URL;
 const username = process.env.OPENIMIS_USERNAME;
 const password = process.env.OPENIMIS_PASSWORD;
 
+// Must match USER_AGENT_CSRF_BYPASS in docker-compose.yml -- see
+// openimis.server.ts for why this is needed.
+const USER_AGENT = "ClaimGuard-Dashboard";
+
 console.log("OPENIMIS_GRAPHQL_URL:", url || "(not set)");
 console.log("OPENIMIS_USERNAME:", username || "(not set)");
 console.log("OPENIMIS_PASSWORD:", password ? "(set, hidden)" : "(not set)");
@@ -23,7 +27,7 @@ let token;
 try {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT },
     body: JSON.stringify({
       query: `mutation($u: String!, $p: String!) { tokenAuth(username: $u, password: $p) { token } }`,
       variables: { u: username, p: password },
@@ -57,7 +61,11 @@ console.log("\n--- Step 2: claims query (same shape as openimis.server.ts) ---")
 try {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      "User-Agent": USER_AGENT,
+    },
     body: JSON.stringify({
       query: `query($first: Int) {
         claims(first: $first) {

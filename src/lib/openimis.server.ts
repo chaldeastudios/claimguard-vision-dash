@@ -75,11 +75,18 @@ function getConfig() {
   return { url, username, password };
 }
 
+// Must match USER_AGENT_CSRF_BYPASS on the backend (docker-compose.yml) --
+// core.schema._check_csrf_token skips its session-cookie-based CSRF check
+// for any request whose User-Agent contains this substring. Without it,
+// every request from this stateless JWT client fails with a KeyError on
+// request.session['csrftoken'], since there's no browser session to hold one.
+const USER_AGENT = "ClaimGuard-Dashboard";
+
 async function authenticate(): Promise<string> {
   const { url, username, password } = getConfig();
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT },
     body: JSON.stringify({
       query: `mutation TokenAuth($username: String!, $password: String!) {
         tokenAuth(username: $username, password: $password) { token }
@@ -112,7 +119,11 @@ async function graphqlRequest<T>(query: string, variables?: Record<string, unkno
       // "Bearer" (not django-graphql-jwt's own default of "JWT") -- using the
       // wrong prefix doesn't error, it just silently leaves the request
       // unauthenticated, so every resolver's permission check fails.
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        "User-Agent": USER_AGENT,
+      },
       body: JSON.stringify({ query, variables }),
     });
 
