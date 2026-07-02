@@ -12,12 +12,21 @@ FROM ghcr.io/openimis/openimis-be:develop
 
 COPY openimis.json /app/openimis.json
 
+# Install the fraud module from the local build context instead of a
+# remote git+https URL. A remote URL keeps the RUN instruction's literal
+# text identical across commits, so Docker's build cache reuses the old
+# layer (and the old, possibly-broken module code) even after pushing a
+# fix and rebuilding -- `--build` does not imply `--no-cache`. COPYing the
+# local directory means the layer hash changes whenever the module's
+# source changes, so a normal rebuild always picks up local edits.
+#
 # Don't rely on the image's own "install modules if openimis.json doesn't
 # look OK" runtime heuristic -- it only checks that openimis.json parses,
 # not that every module it lists is actually importable, so our custom
 # fraud module silently never gets installed through that path. Install it
 # explicitly at build time instead, so it's guaranteed present regardless.
-RUN pip install --no-cache-dir "git+https://github.com/chaldeastudios/claimguard-vision-dash.git@main#egg=openimis-be-fraud&subdirectory=openimis-be-fraud_py"
+COPY openimis-be-fraud_py /opt/openimis/openimis-be-fraud_py
+RUN pip install --no-cache-dir /opt/openimis/openimis-be-fraud_py
 
 # The base image's ENTRYPOINT is a script that dispatches on its first arg
 # (start, manage, worker, etc — see docker-compose.yml's `command: start`).
