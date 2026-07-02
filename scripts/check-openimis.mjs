@@ -30,7 +30,15 @@ try {
     }),
   });
   console.log("HTTP status:", res.status);
-  const json = await res.json();
+  const text = await res.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    console.error("\nResponse was not JSON -- likely a Django error page. First 2000 chars:\n");
+    console.error(text.slice(0, 2000));
+    process.exit(1);
+  }
   console.log(JSON.stringify(json, null, 2));
   token = json?.data?.tokenAuth?.token;
 } catch (err) {
@@ -72,7 +80,15 @@ try {
     }),
   });
   console.log("HTTP status:", res.status);
-  const json = await res.json();
+  const text = await res.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    console.error("\nResponse was not JSON -- likely a Django error page. First 2000 chars:\n");
+    console.error(text.slice(0, 2000));
+    process.exit(1);
+  }
   console.log(JSON.stringify(json, null, 2));
   if (json.errors) {
     console.error("\nGraphQL returned errors -- likely a field-name mismatch in openimis.server.ts.");
