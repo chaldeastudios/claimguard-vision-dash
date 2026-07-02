@@ -9,7 +9,6 @@ import {
   ListChecks,
   Building2,
   Settings as SettingsIcon,
-  Plus,
   Bell,
 } from "lucide-react";
 
@@ -21,7 +20,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const nav: Array<{ to: string; label: string; end?: boolean; Icon: React.ComponentType<{ className?: string }> }> = [
   { to: "/dashboard", label: "Overview", end: true, Icon: LayoutDashboard },
   { to: "/dashboard/claims", label: "Claims Queue", Icon: ListChecks },
-  { to: "/dashboard/claims/new", label: "New Claim", Icon: Plus },
   { to: "/dashboard/hospitals", label: "Hospitals", Icon: Building2 },
   { to: "/dashboard/settings", label: "Settings", Icon: SettingsIcon },
 ];

@@ -1,9 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchClaims, fmtKES, type RiskLevel } from "@/lib/claims-api";
-import { seedClaims } from "@/lib/seed.functions";
 import { ShieldAlert, TrendingUp, Wallet, Activity, ArrowUpRight, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
@@ -96,20 +94,11 @@ function Donut({ high, med, low }: { high: number; med: number; low: number }) {
 }
 
 function Overview() {
-  const seedFn = useServerFn(seedClaims);
-  const qc = useQueryClient();
+  const fetchClaimsFn = useServerFn(fetchClaims);
   const { data: claims = [], isLoading } = useQuery({
     queryKey: ["claims"],
-    queryFn: fetchClaims,
+    queryFn: () => fetchClaimsFn(),
   });
-
-  useEffect(() => {
-    if (!isLoading && claims.length === 0) {
-      seedFn()
-        .then(() => qc.invalidateQueries({ queryKey: ["claims"] }))
-        .catch((e) => console.error("seed failed", e));
-    }
-  }, [isLoading, claims.length, seedFn, qc]);
 
   const scored = claims.filter((c) => c.analysis);
   const pending = claims.filter((c) => !c.analysis);
@@ -168,7 +157,7 @@ function Overview() {
                 >
                   <div>
                     <div className="text-sm font-medium text-foreground">
-                      {c.patient} · {c.id}
+                      {c.patient} · {c.code}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {c.facility} — {c.diagnosis}

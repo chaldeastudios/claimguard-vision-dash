@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getOpenimisClaim } from "@/lib/openimis.server";
 import { z } from "zod";
 
 const Input = z.object({ claimId: z.string().min(1) });
@@ -31,21 +32,16 @@ export const analyzeClaim = createServerFn({ method: "POST" })
       model: "gemini-2.5-flash",
     };
 
-    const { data: claim, error: claimErr } = await context.supabase
-      .from("claims")
-      .select("*")
-      .eq("id", data.claimId)
-      .maybeSingle();
-    if (claimErr) throw claimErr;
+    const claim = await getOpenimisClaim(data.claimId);
     if (!claim) throw new Error("Claim not found");
 
-    const userPrompt = `Claim ID: ${claim.id}
-Patient: ${claim.patient} (${claim.patient_id})
+    const userPrompt = `Claim ID: ${claim.code}
+Patient: ${claim.patient} (${claim.patientId})
 Facility: ${claim.facility}
-Diagnosis: ${claim.diagnosis_code} — ${claim.diagnosis}
-Services billed: ${(claim.services ?? []).join(", ")}
+Diagnosis: ${claim.diagnosisCode} — ${claim.diagnosis}
+Services billed: ${claim.services.length ? claim.services.join(", ") : "not recorded"}
 Amount billed: KES ${claim.amount.toLocaleString("en-KE")}
-Submitted: ${claim.submitted_at}
+Submitted: ${claim.submittedAt}
 
 Analyze this claim for fraud, abuse, or billing irregularities.`;
 
@@ -100,7 +96,7 @@ Analyze this claim for fraud, abuse, or billing irregularities.`;
     const { data: inserted, error: insertErr } = await context.supabase
       .from("claim_risk_analysis")
       .insert({
-        claim_id: claim.id,
+        claim_id: claim.id, // openIMIS claim uuid -- matches what the backend fraud module syncs
         model,
         summary: safe.summary,
         risk_score: safe.risk_score,

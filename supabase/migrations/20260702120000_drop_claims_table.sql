@@ -1,0 +1,12 @@
+-- Claims now live in openIMIS and are fetched live over GraphQL by the
+-- dashboard's server functions (see src/lib/openimis.server.ts) instead of
+-- being duplicated into Supabase. claim_risk_analysis stays -- it's
+-- ClaimGuard's own AI/heuristic analysis output, keyed by the openIMIS claim
+-- uuid, and is written both by the backend fraud module's signal hook and by
+-- the dashboard's manual "Run AI analysis" action.
+--
+-- Dropping public.claims CASCADE removes the now-orphaned foreign key on
+-- claim_risk_analysis.claim_id (the column itself, and claim_risk_analysis
+-- as a whole, are untouched -- CASCADE here only drops the dependent
+-- constraint, not the referencing table).
+DROP TABLE IF EXISTS public.claims CASCADE;

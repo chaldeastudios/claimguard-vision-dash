@@ -1,5 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   fetchClaim,
   fetchLatestAnalysis,
@@ -7,7 +9,9 @@ import {
   type FraudReason,
   type RiskLevel,
 } from "@/lib/claims-api";
+import { analyzeClaim } from "@/lib/ai-analysis.functions";
 import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard/claims/$claimId")({
   component: ClaimDetail,
@@ -23,11 +27,15 @@ export const Route = createFileRoute("/_authenticated/dashboard/claims/$claimId"
 
 function ClaimDetail() {
   const { claimId } = Route.useParams();
+  const qc = useQueryClient();
+  const fetchClaimFn = useServerFn(fetchClaim);
+  const analyzeFn = useServerFn(analyzeClaim);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const { data: c, isLoading } = useQuery({
     queryKey: ["claim", claimId],
     queryFn: async () => {
-      const claim = await fetchClaim(claimId);
+      const claim = await fetchClaimFn({ data: { claimId } });
       if (!claim) throw notFound();
       return claim;
     },
@@ -37,8 +45,21 @@ function ClaimDetail() {
     queryKey: ["analysis", claimId],
     queryFn: () => fetchLatestAnalysis(claimId),
     enabled: !!c,
-    refetchInterval: (q) => (q.state.data ? false : 3000),
   });
+
+  async function runAnalysis() {
+    setAnalyzing(true);
+    try {
+      await analyzeFn({ data: { claimId } });
+      qc.invalidateQueries({ queryKey: ["analysis", claimId] });
+      qc.invalidateQueries({ queryKey: ["claims"] });
+      toast.success("AI analysis complete");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "AI analysis failed");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
 
   if (isLoading || !c) {
     return <div className="p-10 text-muted-foreground">Loading claim…</div>;
@@ -69,7 +90,7 @@ function ClaimDetail() {
             <ArrowLeft className="h-3.5 w-3.5" /> Back to queue
           </Link>
           <h1 className="mt-2 font-serif text-4xl">
-            Claim <span className="accent-word">{c.id}</span>
+            Claim <span className="accent-word">{c.code}</span>
           </h1>
         </div>
         <div className="flex gap-2">
@@ -97,9 +118,25 @@ function ClaimDetail() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   {analysis
                     ? `${analysis.model} · ${new Date(analysis.created_at).toLocaleString("en-KE")}`
-                    : "AI analysis is running for this claim…"}
+                    : analyzing
+                      ? "AI analysis is running for this claim…"
+                      : "Not yet analyzed."}
                 </p>
               </div>
+              {!analysis && (
+                <button
+                  onClick={runAnalysis}
+                  disabled={analyzing}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[color:var(--brand-brown)] px-5 py-2.5 text-sm font-medium text-[color:var(--brand-brown-foreground)] hover:opacity-90 disabled:opacity-60"
+                >
+                  {analyzing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  {analyzing ? "Analyzing…" : "Run AI analysis"}
+                </button>
+              )}
             </div>
 
             {analysis ? (
@@ -136,10 +173,14 @@ function ClaimDetail() {
                   ))}
                 </ol>
               </>
-            ) : (
+            ) : analyzing ? (
               <div className="mt-5 flex items-center gap-3 rounded-2xl bg-background/60 p-6 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin text-[color:var(--brand-orange)]" />
-                AI is analyzing this claim. This page will update automatically when results are ready.
+                AI is analyzing this claim…
+              </div>
+            ) : (
+              <div className="mt-5 rounded-2xl bg-background/60 p-6 text-sm text-muted-foreground">
+                No analysis yet. Run AI analysis to score this claim for fraud risk.
               </div>
             )}
           </div>
@@ -166,11 +207,15 @@ function ClaimDetail() {
               <div className="col-span-2">
                 <dt className="text-muted-foreground">Services billed</dt>
                 <dd className="mt-1 flex flex-wrap gap-2">
-                  {c.services.map((s: string) => (
-                    <span key={s} className="rounded-full bg-background px-3 py-1 text-xs text-foreground">
-                      {s}
-                    </span>
-                  ))}
+                  {c.services.length ? (
+                    c.services.map((s: string) => (
+                      <span key={s} className="rounded-full bg-background px-3 py-1 text-xs text-foreground">
+                        {s}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Not recorded in openIMIS for this claim.</span>
+                  )}
                 </dd>
               </div>
             </dl>
@@ -190,10 +235,12 @@ function ClaimDetail() {
                   {analysis.risk_level} risk
                 </div>
               </>
-            ) : (
+            ) : analyzing ? (
               <div className="mt-2 flex items-center gap-2 text-sm opacity-90">
                 <Loader2 className="h-4 w-4 animate-spin" /> Analyzing…
               </div>
+            ) : (
+              <div className="mt-2 text-sm opacity-90">Not yet analyzed</div>
             )}
           </div>
 

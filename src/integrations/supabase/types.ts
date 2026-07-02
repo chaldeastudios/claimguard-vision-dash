@@ -54,59 +54,6 @@ export type Database = {
           risk_score?: number
           summary?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "claim_risk_analysis_claim_id_fkey"
-            columns: ["claim_id"]
-            isOneToOne: false
-            referencedRelation: "claims"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      claims: {
-        Row: {
-          amount: number
-          created_at: string
-          diagnosis: string
-          diagnosis_code: string
-          facility: string
-          id: string
-          patient: string
-          patient_id: string
-          services: string[]
-          status: string
-          submitted_at: string
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          diagnosis: string
-          diagnosis_code: string
-          facility: string
-          id: string
-          patient: string
-          patient_id: string
-          services?: string[]
-          status?: string
-          submitted_at: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          diagnosis?: string
-          diagnosis_code?: string
-          facility?: string
-          id?: string
-          patient?: string
-          patient_id?: string
-          services?: string[]
-          status?: string
-          submitted_at?: string
-          updated_at?: string
-        }
         Relationships: []
       }
       profiles: {

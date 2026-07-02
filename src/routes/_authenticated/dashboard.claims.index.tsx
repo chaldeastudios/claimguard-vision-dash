@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   fetchClaims,
   facilitiesList,
@@ -8,7 +9,7 @@ import {
   type RiskLevel,
 } from "@/lib/claims-api";
 import { pendingClaimIds } from "@/lib/pending-analysis";
-import { Plus, Search, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/claims/")({
   component: ClaimsQueue,
@@ -47,9 +48,10 @@ function NoAnalysisBadge() {
 }
 
 function ClaimsQueue() {
+  const fetchClaimsFn = useServerFn(fetchClaims);
   const { data: claims = [], isLoading } = useQuery({
     queryKey: ["claims"],
-    queryFn: fetchClaims,
+    queryFn: () => fetchClaimsFn(),
     refetchInterval: (q) => {
       const data = q.state.data;
       if (!data) return false;
@@ -68,7 +70,7 @@ function ClaimsQueue() {
       const s = q.toLowerCase();
       r = r.filter(
         (c) =>
-          c.id.toLowerCase().includes(s) ||
+          c.code.toLowerCase().includes(s) ||
           c.patient.toLowerCase().includes(s) ||
           c.patientId.toLowerCase().includes(s),
       );
@@ -97,12 +99,6 @@ function ClaimsQueue() {
             {isLoading ? "Loading…" : `${rows.length} claims`}
           </p>
         </div>
-        <Link
-          to="/dashboard/claims/new"
-          className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-brown)] px-5 py-2.5 text-sm font-medium text-[color:var(--brand-brown-foreground)] hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> New Claim
-        </Link>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-[color:var(--brand-cream)] p-4">
@@ -167,7 +163,7 @@ function ClaimsQueue() {
                     params={{ claimId: c.id }}
                     className="font-medium text-[color:var(--brand-brown)] hover:underline"
                   >
-                    {c.id}
+                    {c.code}
                   </Link>
                 </td>
                 <td className="px-5 py-3">

@@ -215,14 +215,16 @@ docker exec -it openimis-backend python manage.py test fraud
 - **Rule-based scoring, with an optional ML hook.** The default engine is
   transparent heuristics; an external ML scorer can be plugged in via
   `external_scorer_endpoint` in `openimis.json` but is not required to run.
-- **Dashboard reads from a Supabase mirror, not openIMIS directly.** The reviewer
-  dashboard reads `claims` / `claim_risk_analysis` from Supabase, which the
-  backend writes to after scoring. This decouples the UI from the openIMIS
-  GraphQL API for demo reliability, but means the dashboard reflects openIMIS
-  state only as of the last sync.
-- **AI analysis requires a Gemini API key.** The "Analyze" action in Claim Detail
-  calls Google Gemini directly and needs `GEMINI_API_KEY` set; without it, claims
-  still carry their seeded heuristic scores but on-demand AI review is unavailable.
+- **Claims are fetched live from openIMIS; only risk analysis lives in Supabase.**
+  The reviewer dashboard queries openIMIS's own GraphQL API server-side
+  (`src/lib/openimis.server.ts`, `OPENIMIS_USERNAME`/`OPENIMIS_PASSWORD` env vars)
+  for claim data, and merges in `claim_risk_analysis` from Supabase, keyed by the
+  openIMIS claim uuid. There is no claim-creation UI in ClaimGuard — claims are
+  entered in openIMIS itself, as they would be for a real insurer-side tool.
+- **AI analysis requires a Gemini API key.** The "Run AI analysis" action in Claim
+  Detail calls Google Gemini directly and needs `GEMINI_API_KEY` set; without it,
+  claims show a "Not yet analyzed" state until the fraud module's signal hook (or
+  a manual analysis, once a key is set) scores them.
 - **Single-tenant auth.** RLS policies grant any authenticated user full read/write
   — appropriate for one internal reviewer team, not multi-scheme tenancy.
 - **Near-duplicate detection scope.** openIMIS core already rejects exact duplicates;

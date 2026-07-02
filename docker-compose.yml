@@ -154,6 +154,14 @@ services:
       - "5173:5173"
     environment:
       - PORT=5173
+      # Server-side only (src/lib/openimis.server.ts) -- the dashboard's
+      # "Claims Queue" fetches live claim data from openIMIS's own GraphQL
+      # API over the internal Docker network rather than duplicating claims
+      # into Supabase. SITE_ROOT=api/ on the backend service (above)
+      # registers GraphQL at /api/graphql, matching this URL.
+      - OPENIMIS_GRAPHQL_URL=http://backend:8000/api/graphql
+      - OPENIMIS_USERNAME=${OPENIMIS_USERNAME}
+      - OPENIMIS_PASSWORD=${OPENIMIS_PASSWORD}
     depends_on:
       - backend
     networks:

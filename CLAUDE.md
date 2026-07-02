@@ -77,8 +77,8 @@ Originally scaffolded with an external AI website builder that generates its own
 - `/` — marketing landing page (hero, fraud-category cards, stats bar, "why choose us" section), reframed from the Mindoor reference screenshots. Pitches to insurance companies/schemes, not hospitals or consumers.
 - `/dashboard` — separate visual mode, app-shell layout (sidebar nav: Overview, Claims Queue, Hospitals, Settings), same brand tokens but dashboard layout patterns.
   - `/dashboard` (Overview): 4 KPI cards, risk distribution chart, recent high-risk claims list.
-  - `/dashboard/claims`: full claims queue table — Claim ID, Patient, Facility, Diagnosis, Amount (KES), Risk Score, Risk Level badge, Submitted Date. Sortable, filterable (risk level, date range, hospital), searchable.
-  - Claim Detail (`dashboard.claims.$claimId.tsx`): full claim metadata, risk score, "Why this was flagged" reasons list (with a graceful "Not yet analyzed" state), Approve/Flag for Investigation/Reject buttons.
+  - `/dashboard/claims`: full claims queue table — Claim ID, Patient, Facility, Diagnosis, Amount (KES), Risk Score, Risk Level badge, Submitted Date. Sortable, filterable (risk level, date range, hospital), searchable. Read-only — there is no claim-creation UI in ClaimGuard; claims are entered in openIMIS and ClaimGuard just displays them.
+  - Claim Detail (`dashboard.claims.$claimId.tsx`): full claim metadata, risk score, "Why this was flagged" reasons list (with a graceful "Not yet analyzed" state and a manual "Run AI analysis" button), Approve/Flag for Investigation/Reject buttons (UI only — not yet wired to write anywhere).
 
 **Auth — done**:
 - Real **Supabase Auth**, connected to the named external "ClaimGuard" Supabase org/project (not a bundled cloud-auth service — that path was explicitly avoided and has since been fully removed from the codebase).
@@ -86,16 +86,17 @@ Originally scaffolded with an external AI website builder that generates its own
 - Successful auth → redirect to `/dashboard`.
 
 **Data — done**:
-- `claims` and `claim_risk_analysis` tables live in `supabase/migrations/`, both with RLS enabled (authenticated-user policies, not per-row ownership — single internal team, not multi-tenant).
-- Demo data (Kenyan names, hospital names like Kenyatta National Hospital / Aga Khan University Hospital / Nakuru Level 5 Hospital / Moi Teaching and Referral Hospital, ICD-10-style codes, KES amounts) lives in `src/lib/claims-data.ts` and is seeded into Supabase idempotently via `seedClaims` (`src/lib/seed.functions.ts`), called from the dashboard route — not hardcoded into UI components.
-- Approve/Flag for Investigation/Reject buttons write to the `status` column on the real claim row, with the UI reflecting the update.
+- Claims themselves are **not** stored in Supabase. `src/lib/openimis.server.ts` is a server-only GraphQL client (django-graphql-jwt auth, service-account credentials via `OPENIMIS_USERNAME`/`OPENIMIS_PASSWORD` env vars) that fetches claims live from openIMIS's own Django backend over the internal Docker network (`http://backend:8000/api/graphql`). `src/lib/claims-api.ts` wraps this in TanStack Start server functions (`fetchClaims`, `fetchClaim`) and merges in risk analyses. This reflects the real architecture: openIMIS is the system of record for claims, ClaimGuard is a companion reviewer tool that reads from it, not a place claims get created.
+- `claim_risk_analysis` (in `supabase/migrations/`, RLS enabled, authenticated-user policies) is ClaimGuard's own AI/heuristic analysis output, keyed by the openIMIS claim `uuid` — not a Supabase-internal id. It's written from two places: the backend fraud module's signal hook (`openimis-be-fraud_py/services.py`'s `_sync_to_supabase`, on `SubmitClaimMutation`) and the dashboard's manual "Run AI analysis" button (`analyzeClaim`, `src/lib/ai-analysis.functions.ts`).
+- The Supabase `claims` table (and the claim-creation UI/server fn that used to write to it) was removed — see `supabase/migrations/20260702120000_drop_claims_table.sql`. Demo/seed claims are created directly in openIMIS via Django ORM (or the openIMIS UI) instead.
+- Approve/Flag for Investigation/Reject buttons on Claim Detail are UI-only — not wired to write anywhere yet.
 
 **AI integration — done**:
 - Calls Google's Gemini API directly (`gemini-2.5-flash`, `GEMINI_API_KEY` env var) — no third-party AI gateway.
-- Trigger: manual "Analyze" button in Claim Detail (decided over fully-automatic-on-submit, for easier demo control).
-- The AI call sends claim data (diagnosis, amount, hospital, services billed, etc.) and should return structured JSON: risk score (0–100), risk level (High/Medium/Low), 2–4 plain-language reasons.
-- Response gets written to `claim_risk_analysis`, linked to the claim.
-- Claim Detail's "Why this was flagged" section should pull the latest real analysis from this table — with a graceful "Not yet analyzed" state for claims with no analysis yet, rather than broken/empty UI.
+- Trigger: manual "Run AI analysis" button in Claim Detail (decided over fully-automatic-on-submit, for easier demo control).
+- The AI call fetches the claim from openIMIS (`getOpenimisClaim`) and sends it (diagnosis, amount, hospital, services billed if recorded, etc.) to Gemini, which returns structured JSON: risk score (0–100), risk level (High/Medium/Low), 2–4 plain-language reasons.
+- Response gets written to `claim_risk_analysis`, keyed by the openIMIS claim uuid.
+- Claim Detail's "Why this was flagged" section pulls the latest analysis from this table — with a graceful "Not yet analyzed" state (plus the analysis button) for claims with no analysis yet, rather than broken/empty UI.
 
 ## Demo narrative (for context on why certain decisions were made)
 
