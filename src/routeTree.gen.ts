@@ -17,7 +17,6 @@ import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedDashboardSettingsRouteImport } from './routes/_authenticated/dashboard.settings'
 import { Route as AuthenticatedDashboardHospitalsRouteImport } from './routes/_authenticated/dashboard.hospitals'
 import { Route as AuthenticatedDashboardClaimsRouteImport } from './routes/_authenticated/dashboard.claims'
-import { Route as AuthenticatedDashboardClaimsIndexRouteImport } from './routes/_authenticated/dashboard.claims.index'
 import { Route as AuthenticatedDashboardClaimsClaimIdRouteImport } from './routes/_authenticated/dashboard.claims.$claimId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -63,12 +62,6 @@ const AuthenticatedDashboardClaimsRoute =
     path: '/claims',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
-const AuthenticatedDashboardClaimsIndexRoute =
-  AuthenticatedDashboardClaimsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedDashboardClaimsRoute,
-  } as any)
 const AuthenticatedDashboardClaimsClaimIdRoute =
   AuthenticatedDashboardClaimsClaimIdRouteImport.update({
     id: '/$claimId',
@@ -85,16 +78,15 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/claims/$claimId': typeof AuthenticatedDashboardClaimsClaimIdRoute
-  '/dashboard/claims/': typeof AuthenticatedDashboardClaimsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
   '/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRoute
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/claims/$claimId': typeof AuthenticatedDashboardClaimsClaimIdRoute
-  '/dashboard/claims': typeof AuthenticatedDashboardClaimsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,7 +99,6 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/dashboard/claims/$claimId': typeof AuthenticatedDashboardClaimsClaimIdRoute
-  '/_authenticated/dashboard/claims/': typeof AuthenticatedDashboardClaimsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -120,16 +111,15 @@ export interface FileRouteTypes {
     | '/dashboard/settings'
     | '/dashboard/'
     | '/dashboard/claims/$claimId'
-    | '/dashboard/claims/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/dashboard/claims'
     | '/dashboard/hospitals'
     | '/dashboard/settings'
     | '/dashboard'
     | '/dashboard/claims/$claimId'
-    | '/dashboard/claims'
   id:
     | '__root__'
     | '/'
@@ -141,7 +131,6 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/settings'
     | '/_authenticated/dashboard/'
     | '/_authenticated/dashboard/claims/$claimId'
-    | '/_authenticated/dashboard/claims/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -208,13 +197,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardClaimsRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
-    '/_authenticated/dashboard/claims/': {
-      id: '/_authenticated/dashboard/claims/'
-      path: '/'
-      fullPath: '/dashboard/claims/'
-      preLoaderRoute: typeof AuthenticatedDashboardClaimsIndexRouteImport
-      parentRoute: typeof AuthenticatedDashboardClaimsRoute
-    }
     '/_authenticated/dashboard/claims/$claimId': {
       id: '/_authenticated/dashboard/claims/$claimId'
       path: '/$claimId'
@@ -227,15 +209,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedDashboardClaimsRouteChildren {
   AuthenticatedDashboardClaimsClaimIdRoute: typeof AuthenticatedDashboardClaimsClaimIdRoute
-  AuthenticatedDashboardClaimsIndexRoute: typeof AuthenticatedDashboardClaimsIndexRoute
 }
 
 const AuthenticatedDashboardClaimsRouteChildren: AuthenticatedDashboardClaimsRouteChildren =
   {
     AuthenticatedDashboardClaimsClaimIdRoute:
       AuthenticatedDashboardClaimsClaimIdRoute,
-    AuthenticatedDashboardClaimsIndexRoute:
-      AuthenticatedDashboardClaimsIndexRoute,
   }
 
 const AuthenticatedDashboardClaimsRouteWithChildren =

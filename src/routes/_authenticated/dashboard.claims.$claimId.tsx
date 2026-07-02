@@ -15,9 +15,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/dashboard/claims/$claimId")({
   component: ClaimDetail,
-  notFoundComponent: () => (
-    <div className="p-10 text-muted-foreground">Claim not found.</div>
-  ),
+  notFoundComponent: () => <div className="p-10 text-muted-foreground">Claim not found.</div>,
   errorComponent: ({ error }) => (
     <div className="p-10 text-sm text-muted-foreground">
       Something went wrong loading this claim. {error.message}
@@ -89,16 +87,14 @@ function ClaimDetail() {
           ? "bg-[color:var(--risk-low)]"
           : "bg-[color:var(--brand-brown)]";
 
-  const reasons: FraudReason[] = analysis
-    ? (analysis.reasons as unknown as FraudReason[])
-    : [];
+  const reasons: FraudReason[] = analysis ? (analysis.reasons as unknown as FraudReason[]) : [];
 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <Link
-            to="/dashboard/claims"
+            to="/dashboard"
             className="inline-flex items-center gap-1 text-sm text-[color:var(--brand-brown)] hover:underline"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to queue
@@ -204,7 +200,9 @@ function ClaimDetail() {
             <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
               <div>
                 <dt className="text-muted-foreground">Patient</dt>
-                <dd className="text-foreground">{c.patient} ({c.patientId})</dd>
+                <dd className="text-foreground">
+                  {c.patient} ({c.patientId})
+                </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Facility</dt>
@@ -212,23 +210,32 @@ function ClaimDetail() {
               </div>
               <div>
                 <dt className="text-muted-foreground">Diagnosis</dt>
-                <dd className="text-foreground">{c.diagnosisCode} — {c.diagnosis}</dd>
+                <dd className="text-foreground">
+                  {c.diagnosisCode} — {c.diagnosis}
+                </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Submitted</dt>
-                <dd className="text-foreground">{new Date(c.submittedAt).toLocaleString("en-KE")}</dd>
+                <dd className="text-foreground">
+                  {new Date(c.submittedAt).toLocaleString("en-KE")}
+                </dd>
               </div>
               <div className="col-span-2">
                 <dt className="text-muted-foreground">Services billed</dt>
                 <dd className="mt-1 flex flex-wrap gap-2">
                   {c.services.length ? (
                     c.services.map((s: string) => (
-                      <span key={s} className="rounded-full bg-background px-3 py-1 text-xs text-foreground">
+                      <span
+                        key={s}
+                        className="rounded-full bg-background px-3 py-1 text-xs text-foreground"
+                      >
                         {s}
                       </span>
                     ))
                   ) : (
-                    <span className="text-xs text-muted-foreground">Not recorded in openIMIS for this claim.</span>
+                    <span className="text-xs text-muted-foreground">
+                      Not recorded in openIMIS for this claim.
+                    </span>
                   )}
                 </dd>
               </div>
