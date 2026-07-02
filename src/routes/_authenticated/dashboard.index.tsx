@@ -95,7 +95,7 @@ function Donut({ high, med, low }: { high: number; med: number; low: number }) {
 
 function Overview() {
   const fetchClaimsFn = useServerFn(fetchClaims);
-  const { data: claims = [], isLoading } = useQuery({
+  const { data: claims = [], isLoading, isError, error } = useQuery({
     queryKey: ["claims"],
     queryFn: () => fetchClaimsFn(),
   });
@@ -127,6 +127,12 @@ function Overview() {
             : `${high} high-risk claims need your attention today.${pending.length ? ` ${pending.length} awaiting analysis.` : ""}`}
         </p>
       </div>
+
+      {isError && (
+        <div className="rounded-2xl bg-[color:var(--risk-high)]/10 p-4 text-sm text-[color:var(--risk-high)]">
+          Failed to load claims from openIMIS: {error instanceof Error ? error.message : String(error)}
+        </div>
+      )}
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Claims in queue" value={claims.length.toString()} tone="cream" Icon={Activity} />

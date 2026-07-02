@@ -32,7 +32,12 @@ function ClaimDetail() {
   const analyzeFn = useServerFn(analyzeClaim);
   const [analyzing, setAnalyzing] = useState(false);
 
-  const { data: c, isLoading } = useQuery({
+  const {
+    data: c,
+    isLoading,
+    isError,
+    error: claimError,
+  } = useQuery({
     queryKey: ["claim", claimId],
     queryFn: async () => {
       const claim = await fetchClaimFn({ data: { claimId } });
@@ -59,6 +64,15 @@ function ClaimDetail() {
     } finally {
       setAnalyzing(false);
     }
+  }
+
+  if (isError) {
+    return (
+      <div className="p-10 text-sm text-[color:var(--risk-high)]">
+        Failed to load claim from openIMIS:{" "}
+        {claimError instanceof Error ? claimError.message : String(claimError)}
+      </div>
+    );
   }
 
   if (isLoading || !c) {

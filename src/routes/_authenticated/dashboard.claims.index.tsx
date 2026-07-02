@@ -49,7 +49,7 @@ function NoAnalysisBadge() {
 
 function ClaimsQueue() {
   const fetchClaimsFn = useServerFn(fetchClaims);
-  const { data: claims = [], isLoading } = useQuery({
+  const { data: claims = [], isLoading, isError, error } = useQuery({
     queryKey: ["claims"],
     queryFn: () => fetchClaimsFn(),
     refetchInterval: (q) => {
@@ -100,6 +100,12 @@ function ClaimsQueue() {
           </p>
         </div>
       </div>
+
+      {isError && (
+        <div className="rounded-2xl bg-[color:var(--risk-high)]/10 p-4 text-sm text-[color:var(--risk-high)]">
+          Failed to load claims from openIMIS: {error instanceof Error ? error.message : String(error)}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-[color:var(--brand-cream)] p-4">
         <div className="relative min-w-[220px] flex-1">
