@@ -97,7 +97,12 @@ services:
       # actually requests, instead of bare "/graphql".
       - SITE_ROOT=api/
       - SUPABASE_URL=${VITE_SUPABASE_URL}
-      - SUPABASE_KEY=${VITE_SUPABASE_PUBLISHABLE_KEY}
+      # Must be the service_role key, not the anon/publishable one -- RLS
+      # only allows authenticated reads/writes, and this backend writes
+      # server-to-server with no authenticated session, so anon writes get
+      # silently rejected (caught by services.py's try/except, logged as a
+      # warning, sync just never happens -- easy to miss).
+      - SUPABASE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
     volumes:
       - ./openimis.json:/app/openimis.json
       - ./openimis-be-fraud_py:/opt/openimis/openimis-be-fraud_py
