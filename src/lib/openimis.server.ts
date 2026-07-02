@@ -147,10 +147,14 @@ function mapClaim(node: OpenimisClaimNode): Claim {
   };
 }
 
+// openIMIS's claims connection caps `first` at 100 server-side (Graphene-Django's
+// max_limit) -- requesting more throws a GraphQL error instead of clamping.
+const MAX_PAGE_SIZE = 100;
+
 export async function getOpenimisClaims(): Promise<Claim[]> {
   const data = await graphqlRequest<{ claims: { edges: { node: OpenimisClaimNode }[] } }>(
     CLAIMS_QUERY,
-    { first: 200 },
+    { first: MAX_PAGE_SIZE },
   );
   return (data.claims?.edges ?? []).map((e) => mapClaim(e.node));
 }
