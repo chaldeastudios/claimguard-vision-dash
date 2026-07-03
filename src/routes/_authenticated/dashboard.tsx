@@ -1,5 +1,6 @@
 import { Outlet, createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { OrganizationLogo } from "@/components/brand/organization-logo";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LogOut, Settings as SettingsIcon, Bell } from "lucide-react";
@@ -27,7 +28,7 @@ function DashboardLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: CURRENT_PROFILE_QUERY_KEY,
     queryFn: fetchCurrentProfile,
   });
@@ -51,7 +52,7 @@ function DashboardLayout() {
       <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background px-6 py-4 md:px-10">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center">
-            <OrganizationLogo logoUrl={profile?.logoUrl} className="h-9" />
+            <OrganizationLogo logoUrl={profile?.logoUrl} loading={profileLoading} className="h-9" />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {nav.map(({ to, label, end }) => (
@@ -90,13 +91,25 @@ function DashboardLayout() {
           >
             <SettingsIcon className="h-4 w-4" />
           </Link>
-          <div className="hidden flex-col items-end text-right md:flex">
-            <span className="text-xs font-medium text-foreground">{displayName}</span>
-            <span className="text-[10px] text-muted-foreground">{profile?.email ?? "—"}</span>
-          </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--brand-brown)] text-sm font-medium text-[color:var(--brand-brown-foreground)]">
-            {initials}
-          </div>
+          {profileLoading ? (
+            <>
+              <div className="hidden flex-col items-end gap-1 md:flex">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-2.5 w-28" />
+              </div>
+              <Skeleton className="h-9 w-9 rounded-full" />
+            </>
+          ) : (
+            <>
+              <div className="hidden flex-col items-end text-right md:flex">
+                <span className="text-xs font-medium text-foreground">{displayName}</span>
+                <span className="text-[10px] text-muted-foreground">{profile?.email ?? "—"}</span>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--brand-brown)] text-sm font-medium text-[color:var(--brand-brown-foreground)]">
+                {initials}
+              </div>
+            </>
+          )}
           <button
             type="button"
             onClick={handleSignOut}

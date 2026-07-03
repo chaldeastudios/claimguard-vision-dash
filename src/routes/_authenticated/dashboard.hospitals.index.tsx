@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchClaims, fmtKES } from "@/lib/claims-api";
 import { fetchHealthFacilities } from "@/lib/healthfacility-api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonTable } from "@/components/skeletons";
 import { Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/hospitals/")({
@@ -29,10 +31,11 @@ function Hospitals() {
     error,
   } = useQuery({ queryKey: ["health-facilities"], queryFn: () => fetchHealthFacilitiesFn() });
 
-  const { data: claims = [] } = useQuery({
+  const { data: claims = [], isLoading: claimsLoading } = useQuery({
     queryKey: ["claims"],
     queryFn: () => fetchClaimsFn(),
   });
+  const pageLoading = isLoading || claimsLoading;
 
   const [q, setQ] = useState("");
 
@@ -71,11 +74,11 @@ function Hospitals() {
         <h1 className="font-serif text-4xl">
           Connected <span className="accent-word">Hospitals</span>
         </h1>
-        <p className="mt-2 text-muted-foreground">
-          {isLoading
-            ? "Loading facilities from openIMIS…"
-            : `${facilities.length} facilities registered in openIMIS.`}
-        </p>
+        {pageLoading ? (
+          <Skeleton className="mt-3 h-4 w-72 max-w-full" />
+        ) : (
+          <p className="mt-2 text-muted-foreground">{`${facilities.length} facilities registered in openIMIS.`}</p>
+        )}
       </div>
 
       {isError && (
@@ -85,65 +88,74 @@ function Hospitals() {
         </div>
       )}
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search name, code, or location…"
-          className="w-full rounded-full bg-[color:var(--brand-cream)] py-2 pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[color:var(--brand-brown)]/40"
-        />
-      </div>
+      {pageLoading ? (
+        <SkeletonTable rows={7} cols={7} />
+      ) : (
+        <>
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search name, code, or location…"
+              className="w-full rounded-full bg-[color:var(--brand-cream)] py-2 pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[color:var(--brand-brown)]/40"
+            />
+          </div>
 
-      <div className="overflow-hidden rounded-3xl bg-[color:var(--brand-cream)]">
-        <table className="w-full text-left text-sm">
-          <thead className="text-xs uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-5 py-4">Facility</th>
-              <th className="px-5 py-4">Code</th>
-              <th className="px-5 py-4">Level</th>
-              <th className="px-5 py-4">Location</th>
-              <th className="px-5 py-4 text-right">Claims</th>
-              <th className="px-5 py-4 text-right">High-risk</th>
-              <th className="px-5 py-4 text-right">Total value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ facility: f, stats }) => (
-              <tr key={f.id} className="border-t border-border/40 bg-background/40">
-                <td className="px-5 py-3">
-                  <Link
-                    to="/dashboard/hospitals/$facilityId"
-                    params={{ facilityId: f.id }}
-                    className="font-medium text-[color:var(--brand-brown)] hover:underline"
-                  >
-                    {f.name}
-                  </Link>
-                </td>
-                <td className="px-5 py-3 text-muted-foreground">{f.code}</td>
-                <td className="px-5 py-3 text-muted-foreground">{f.levelLabel}</td>
-                <td className="px-5 py-3 text-muted-foreground">{f.location ?? "—"}</td>
-                <td className="px-5 py-3 text-right text-foreground">{stats?.count ?? 0}</td>
-                <td className="px-5 py-3 text-right">
-                  <span className="rounded-full bg-[color:var(--risk-high)]/15 px-2 py-0.5 text-[color:var(--risk-high)]">
-                    {stats?.high ?? 0}
-                  </span>
-                </td>
-                <td className="px-5 py-3 text-right text-foreground">
-                  {fmtKES(stats?.value ?? 0)}
-                </td>
-              </tr>
-            ))}
-            {!isLoading && rows.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-5 py-10 text-center text-sm text-muted-foreground">
-                  No facilities match the current search.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+          <div className="overflow-hidden rounded-3xl bg-[color:var(--brand-cream)]">
+            <table className="w-full text-left text-sm">
+              <thead className="text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-5 py-4">Facility</th>
+                  <th className="px-5 py-4">Code</th>
+                  <th className="px-5 py-4">Level</th>
+                  <th className="px-5 py-4">Location</th>
+                  <th className="px-5 py-4 text-right">Claims</th>
+                  <th className="px-5 py-4 text-right">High-risk</th>
+                  <th className="px-5 py-4 text-right">Total value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(({ facility: f, stats }) => (
+                  <tr key={f.id} className="border-t border-border/40 bg-background/40">
+                    <td className="px-5 py-3">
+                      <Link
+                        to="/dashboard/hospitals/$facilityId"
+                        params={{ facilityId: f.id }}
+                        className="font-medium text-[color:var(--brand-brown)] hover:underline"
+                      >
+                        {f.name}
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground">{f.code}</td>
+                    <td className="px-5 py-3 text-muted-foreground">{f.levelLabel}</td>
+                    <td className="px-5 py-3 text-muted-foreground">{f.location ?? "—"}</td>
+                    <td className="px-5 py-3 text-right text-foreground">{stats?.count ?? 0}</td>
+                    <td className="px-5 py-3 text-right">
+                      <span className="rounded-full bg-[color:var(--risk-high)]/15 px-2 py-0.5 text-[color:var(--risk-high)]">
+                        {stats?.high ?? 0}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-right text-foreground">
+                      {fmtKES(stats?.value ?? 0)}
+                    </td>
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-5 py-10 text-center text-sm text-muted-foreground"
+                    >
+                      No facilities match the current search.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

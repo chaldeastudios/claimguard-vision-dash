@@ -3,12 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, ChevronsUpDown, Loader2, Plus, Send, Trash2, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Send, Trash2, CheckCircle2, X } from "lucide-react";
 import { OrganizationLogo } from "@/components/brand/organization-logo";
 import { fetchPublicBranding } from "@/lib/public-branding";
 import {
   fetchPublicHealthFacilities,
   searchPublicInsurees,
+  searchPublicInsureesByName,
   submitHospitalClaim,
 } from "@/lib/hospital-portal-api";
 import {
@@ -29,14 +30,6 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandItem,
-} from "@/components/ui/command";
 
 export const Route = createFileRoute("/hospital-portal")({
   head: () => ({ meta: [{ title: "Submit a Claim" }] }),
@@ -58,62 +51,102 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-// Client-filtered picker over a pre-fetched catalog (diagnoses, medical
-// items/services) -- these lists can be large and the search-arg name for
-// the underlying openIMIS query isn't confirmed, so filtering happens in
-// the browser over one fetched page rather than a server-side search.
-function CatalogCombobox({
+function useDebounced(value: string, delayMs = 300): string {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
+  return debounced;
+}
+
+// Table-style search over a pre-fetched catalog (diagnoses, medical
+// items/services) -- filtering is explicit (code or name substring, done
+// here rather than left to a widget's own fuzzy matching) so a name search
+// reliably surfaces matches, and shows a real table of results rather than
+// a single-line combobox.
+function CatalogTablePicker({
   entries,
   value,
   onChange,
-  placeholder,
   loading,
+  placeholder,
 }: {
   entries: CatalogEntry[];
   value: CatalogEntry | null;
-  onChange: (entry: CatalogEntry) => void;
-  placeholder: string;
+  onChange: (entry: CatalogEntry | null) => void;
   loading: boolean;
+  placeholder: string;
 }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const base = !q
+      ? entries
+      : entries.filter((e) => e.code.toLowerCase().includes(q) || e.name.toLowerCase().includes(q));
+    return base.slice(0, 8);
+  }, [entries, query]);
+
+  if (value) {
+    return (
+      <div className="flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm">
+        <span className="truncate">
+          {value.code} — {value.name}
+        </span>
+        <button
           type="button"
-          variant="outline"
-          role="combobox"
-          disabled={loading}
-          className="w-full justify-between font-normal"
+          onClick={() => {
+            onChange(null);
+            setQuery("");
+          }}
+          className="ml-2 shrink-0 text-muted-foreground hover:text-foreground"
         >
-          <span className="truncate">
-            {loading ? "Loading…" : value ? `${value.code} — ${value.name}` : placeholder}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[360px] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Search…" />
-          <CommandList>
-            <CommandEmpty>No matches.</CommandEmpty>
-            {entries.map((e) => (
-              <CommandItem
-                key={e.id}
-                value={`${e.code} ${e.name}`}
-                onSelect={() => {
-                  onChange(e);
-                  setOpen(false);
-                }}
-              >
-                <Check className={value?.id === e.id ? "opacity-100" : "opacity-0"} />
-                {e.code} — {e.name}
-              </CommandItem>
-            ))}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <Input
+        placeholder={loading ? "Loading…" : placeholder}
+        disabled={loading}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      {!loading && (
+        <div className="mt-2 max-h-56 overflow-y-auto overflow-x-hidden rounded-xl border border-border">
+          {entries.length === 0 ? (
+            <p className="p-3 text-sm text-muted-foreground">Nothing loaded from openIMIS yet.</p>
+          ) : filtered.length === 0 ? (
+            <p className="p-3 text-sm text-muted-foreground">No matches for "{query}".</p>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2">Code</th>
+                  <th className="px-3 py-2">Name</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((e) => (
+                  <tr
+                    key={e.id}
+                    onClick={() => onChange(e)}
+                    className="cursor-pointer border-t border-border/60 hover:bg-accent"
+                  >
+                    <td className="px-3 py-2 font-medium text-foreground">{e.code}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{e.name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -151,41 +184,47 @@ function LineItemsEditor({
           Add
         </Button>
       </div>
-      <div className="mt-3 space-y-3">
+      <div className="mt-3 space-y-4">
         {rows.map((row) => (
-          <div key={row.key} className="grid grid-cols-[1fr_90px_120px_36px] items-start gap-2">
-            <CatalogCombobox
-              entries={catalog}
-              value={row.entry}
-              onChange={(entry) => update(row.key, { entry })}
-              placeholder="Select…"
-              loading={loading}
-            />
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              placeholder="Qty"
-              value={row.quantity}
-              onChange={(e) => update(row.key, { quantity: e.target.value })}
-            />
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Price asked"
-              value={row.priceAsked}
-              onChange={(e) => update(row.key, { priceAsked: e.target.value })}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="mt-0.5 text-muted-foreground hover:text-[color:var(--risk-high)]"
-              onClick={() => remove(row.key)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+          <div key={row.key} className="rounded-xl border border-border/60 p-3">
+            <div className="flex items-start gap-2">
+              <div className="flex-1">
+                <CatalogTablePicker
+                  entries={catalog}
+                  value={row.entry}
+                  onChange={(entry) => update(row.key, { entry })}
+                  placeholder="Search by code or name…"
+                  loading={loading}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-0.5 shrink-0 text-muted-foreground hover:text-[color:var(--risk-high)]"
+                onClick={() => remove(row.key)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Quantity"
+                value={row.quantity}
+                onChange={(e) => update(row.key, { quantity: e.target.value })}
+              />
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Price asked"
+                value={row.priceAsked}
+                onChange={(e) => update(row.key, { priceAsked: e.target.value })}
+              />
+            </div>
           </div>
         ))}
         {rows.length === 0 && (
@@ -199,13 +238,14 @@ function LineItemsEditor({
 function HospitalPortal() {
   const fetchBrandingFn = useServerFn(fetchPublicBranding);
   const fetchFacilitiesFn = useServerFn(fetchPublicHealthFacilities);
-  const searchPatientsFn = useServerFn(searchPublicInsurees);
+  const searchPatientsByChfFn = useServerFn(searchPublicInsurees);
+  const searchPatientsByNameFn = useServerFn(searchPublicInsureesByName);
   const fetchDiagnosesFn = useServerFn(fetchDiagnoses);
   const fetchItemsFn = useServerFn(fetchMedicalItems);
   const fetchServicesFn = useServerFn(fetchMedicalServices);
   const submitClaimFn = useServerFn(submitHospitalClaim);
 
-  const { data: branding } = useQuery({
+  const { data: branding, isLoading: brandingLoading } = useQuery({
     queryKey: ["public-branding"],
     queryFn: () => fetchBrandingFn(),
   });
@@ -228,18 +268,49 @@ function HospitalPortal() {
 
   const [facilityId, setFacilityId] = useState("");
 
-  const [patientQuery, setPatientQuery] = useState("");
-  const [debouncedPatientQuery, setDebouncedPatientQuery] = useState("");
+  // Patient search: either field can be used to search, and picking a
+  // result fills both -- so a hospital clerk who only knows the patient's
+  // name doesn't need to also hunt down their CHF ID first.
+  const [nameQuery, setNameQuery] = useState("");
+  const [chfQuery, setChfQuery] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<Insuree | null>(null);
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedPatientQuery(patientQuery), 300);
-    return () => clearTimeout(t);
-  }, [patientQuery]);
-  const { data: patientResults = [], isFetching: patientSearching } = useQuery({
-    queryKey: ["public-patient-search", debouncedPatientQuery],
-    queryFn: () => searchPatientsFn({ data: { chfId: debouncedPatientQuery } }),
-    enabled: debouncedPatientQuery.trim().length >= 3,
+  const debouncedName = useDebounced(nameQuery);
+  const debouncedChf = useDebounced(chfQuery);
+
+  const { data: nameResults = [], isFetching: nameSearching } = useQuery({
+    queryKey: ["public-patient-search-name", debouncedName],
+    queryFn: () => searchPatientsByNameFn({ data: { name: debouncedName } }),
+    enabled: !selectedPatient && debouncedName.trim().length >= 3,
   });
+  const { data: chfResults = [], isFetching: chfSearching } = useQuery({
+    queryKey: ["public-patient-search-chf", debouncedChf],
+    queryFn: () => searchPatientsByChfFn({ data: { chfId: debouncedChf } }),
+    enabled: !selectedPatient && debouncedChf.trim().length >= 3,
+  });
+
+  const patientResults = useMemo(() => {
+    const byId = new Map<string, Insuree>();
+    for (const p of [...chfResults, ...nameResults]) byId.set(p.id, p);
+    return Array.from(byId.values());
+  }, [chfResults, nameResults]);
+  const patientSearching = nameSearching || chfSearching;
+  const patientSearchActive =
+    !selectedPatient && (debouncedName.trim().length >= 3 || debouncedChf.trim().length >= 3);
+
+  function selectPatient(p: Insuree) {
+    setSelectedPatient(p);
+    setNameQuery(p.name);
+    setChfQuery(p.chfId);
+  }
+
+  function handleNameChange(v: string) {
+    setNameQuery(v);
+    if (selectedPatient && v !== selectedPatient.name) setSelectedPatient(null);
+  }
+  function handleChfChange(v: string) {
+    setChfQuery(v);
+    if (selectedPatient && v !== selectedPatient.chfId) setSelectedPatient(null);
+  }
 
   const [diagnosis, setDiagnosis] = useState<CatalogEntry | null>(null);
   const [dateFrom, setDateFrom] = useState(today());
@@ -260,7 +331,8 @@ function HospitalPortal() {
 
   function resetForm() {
     setFacilityId("");
-    setPatientQuery("");
+    setNameQuery("");
+    setChfQuery("");
     setSelectedPatient(null);
     setDiagnosis(null);
     setDateFrom(today());
@@ -311,7 +383,11 @@ function HospitalPortal() {
     <div className="min-h-screen bg-[color:var(--brand-cream)]">
       <header className="border-b border-border/40 bg-background px-6 py-6 md:px-10">
         <div className="mx-auto flex max-w-3xl items-center gap-4">
-          <OrganizationLogo logoUrl={branding?.logoUrl} className="h-12" />
+          <OrganizationLogo
+            logoUrl={branding?.logoUrl}
+            loading={brandingLoading}
+            className="h-12"
+          />
           <div>
             <div className="font-serif text-2xl">
               {branding?.name ? `${branding.name} ` : ""}
@@ -367,42 +443,54 @@ function HospitalPortal() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Patient CHF ID</Label>
-                <Input
-                  className="mt-1.5"
-                  placeholder="Start typing a CHF ID…"
-                  value={selectedPatient ? selectedPatient.chfId : patientQuery}
-                  onChange={(e) => {
-                    setSelectedPatient(null);
-                    setPatientQuery(e.target.value);
-                  }}
-                />
-                {!selectedPatient && debouncedPatientQuery.trim().length >= 3 && (
-                  <div className="mt-2 overflow-hidden rounded-xl border border-border">
+                <Label className="text-sm font-medium">Patient</Label>
+                <div className="mt-1.5 grid grid-cols-2 gap-3">
+                  <Input
+                    placeholder="Search by name…"
+                    value={nameQuery}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Search by CHF ID…"
+                    value={chfQuery}
+                    onChange={(e) => handleChfChange(e.target.value)}
+                  />
+                </div>
+                {patientSearchActive && (
+                  <div className="mt-2 max-h-56 overflow-y-auto overflow-x-hidden rounded-xl border border-border">
                     {patientSearching ? (
                       <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" /> Searching…
                       </div>
                     ) : patientResults.length === 0 ? (
-                      <div className="p-3 text-sm text-muted-foreground">No matching patient.</div>
+                      <p className="p-3 text-sm text-muted-foreground">No matching patient.</p>
                     ) : (
-                      patientResults.map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => setSelectedPatient(p)}
-                          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent"
-                        >
-                          <span>{p.name}</span>
-                          <span className="text-muted-foreground">{p.chfId}</span>
-                        </button>
-                      ))
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-muted/40 text-xs uppercase tracking-wider text-muted-foreground">
+                          <tr>
+                            <th className="px-3 py-2">Name</th>
+                            <th className="px-3 py-2">CHF ID</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {patientResults.map((p) => (
+                            <tr
+                              key={p.id}
+                              onClick={() => selectPatient(p)}
+                              className="cursor-pointer border-t border-border/60 hover:bg-accent"
+                            >
+                              <td className="px-3 py-2 font-medium text-foreground">{p.name}</td>
+                              <td className="px-3 py-2 text-muted-foreground">{p.chfId}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     )}
                   </div>
                 )}
                 {selectedPatient && (
                   <p className="mt-1.5 text-xs text-[color:var(--risk-low)]">
-                    Selected: {selectedPatient.name}
+                    Selected: {selectedPatient.name} ({selectedPatient.chfId})
                   </p>
                 )}
               </div>
@@ -410,11 +498,11 @@ function HospitalPortal() {
               <div>
                 <Label className="text-sm font-medium">Diagnosis</Label>
                 <div className="mt-1.5">
-                  <CatalogCombobox
+                  <CatalogTablePicker
                     entries={diagnoses}
                     value={diagnosis}
                     onChange={setDiagnosis}
-                    placeholder="Select a diagnosis"
+                    placeholder="Search by code or name…"
                     loading={diagnosesLoading}
                   />
                 </div>

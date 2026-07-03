@@ -190,6 +190,33 @@ export async function searchOpenimisInsureesByChfId(chfId: string): Promise<Insu
   return (data.insurees?.edges ?? []).map((e) => mapInsuree(e.node));
 }
 
+// Same rationale as searchOpenimisInsureesByChfId, but by name -- matches
+// either name part (lastName or otherNames) via two aliased sub-queries in
+// one request, since a single root-field call can't OR two filter args.
+export async function searchOpenimisInsureesByName(name: string): Promise<Insuree[]> {
+  if (!name.trim()) return [];
+  const query = `
+    query InsureesByName($name: String!, $first: Int) {
+      byLastName: insurees(lastName_Icontains: $name, first: $first) {
+        edges { node { ${INSUREE_FIELDS} } }
+      }
+      byOtherNames: insurees(otherNames_Icontains: $name, first: $first) {
+        edges { node { ${INSUREE_FIELDS} } }
+      }
+    }
+  `;
+  const data = await graphqlRequest<{
+    byLastName: { edges: { node: InsureeNode }[] };
+    byOtherNames: { edges: { node: InsureeNode }[] };
+  }>(query, { name, first: 5 });
+  const byId = new Map<string, Insuree>();
+  for (const edge of [...(data.byLastName?.edges ?? []), ...(data.byOtherNames?.edges ?? [])]) {
+    const mapped = mapInsuree(edge.node);
+    byId.set(mapped.id, mapped);
+  }
+  return Array.from(byId.values()).slice(0, 5);
+}
+
 export async function getOpenimisInsuree(uuid: string): Promise<Insuree | null> {
   const query = `
     query Insuree($uuid: String!) {

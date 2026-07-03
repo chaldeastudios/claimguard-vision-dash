@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchHealthFacility } from "@/lib/healthfacility-api";
 import { fetchClaims, fmtKES } from "@/lib/claims-api";
+import { SkeletonDetailPage } from "@/components/skeletons";
 import { ArrowLeft, Building2, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/hospitals/$facilityId")({
@@ -41,7 +42,7 @@ function HospitalDetail() {
     },
   });
 
-  const { data: claims = [] } = useQuery({
+  const { data: claims = [], isLoading: claimsLoading } = useQuery({
     queryKey: ["claims"],
     queryFn: () => fetchClaimsFn(),
     enabled: !!facility,
@@ -65,8 +66,8 @@ function HospitalDetail() {
     );
   }
 
-  if (isLoading || !facility) {
-    return <div className="p-10 text-muted-foreground">Loading facility…</div>;
+  if (isLoading || claimsLoading || !facility) {
+    return <SkeletonDetailPage />;
   }
 
   return (

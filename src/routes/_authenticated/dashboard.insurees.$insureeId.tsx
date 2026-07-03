@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchInsuree } from "@/lib/families-api";
 import { InsureeEditDialog } from "@/components/insuree-edit-dialog";
+import { SkeletonDetailPage } from "@/components/skeletons";
 import { ArrowLeft, Crown, User } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/insurees/$insureeId")({
@@ -46,7 +47,7 @@ function InsureeDetail() {
   }
 
   if (isLoading || !insuree) {
-    return <div className="p-10 text-muted-foreground">Loading insuree…</div>;
+    return <SkeletonDetailPage />;
   }
 
   return (

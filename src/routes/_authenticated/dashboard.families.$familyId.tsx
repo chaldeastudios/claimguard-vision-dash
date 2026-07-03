@@ -5,6 +5,7 @@ import { fetchFamily, fetchFamilyMembers } from "@/lib/families-api";
 import { fetchPoliciesByFamily } from "@/lib/policy-api";
 import { fmtKES } from "@/lib/claims-api";
 import { FamilyEditDialog } from "@/components/family-edit-dialog";
+import { SkeletonDetailPage } from "@/components/skeletons";
 import { ArrowLeft, Crown, Users, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/families/$familyId")({
@@ -59,8 +60,8 @@ function FamilyDetail() {
     );
   }
 
-  if (isLoading || !family) {
-    return <div className="p-10 text-muted-foreground">Loading family…</div>;
+  if (isLoading || membersLoading || policiesLoading || !family) {
+    return <SkeletonDetailPage />;
   }
 
   return (
@@ -124,7 +125,7 @@ function FamilyDetail() {
                 {members.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                      {membersLoading ? "Loading members…" : "No members recorded."}
+                      No members recorded.
                     </td>
                   </tr>
                 )}
@@ -198,7 +199,7 @@ function FamilyDetail() {
               {policies.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                    {policiesLoading ? "Loading policies…" : "No policies recorded."}
+                    No policies recorded.
                   </td>
                 </tr>
               )}

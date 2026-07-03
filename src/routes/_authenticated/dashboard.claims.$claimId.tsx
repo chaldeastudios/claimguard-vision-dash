@@ -12,6 +12,8 @@ import {
 import { analyzeClaim } from "@/lib/ai-analysis.functions";
 import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonCard } from "@/components/skeletons";
 
 export const Route = createFileRoute("/_authenticated/dashboard/claims/$claimId")({
   component: ClaimDetail,
@@ -117,7 +119,24 @@ function ClaimDetail() {
   }
 
   if (isLoading || !c) {
-    return <div className="p-10 text-muted-foreground">Loading claim…</div>;
+    return (
+      <div className="space-y-8">
+        <div>
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="mt-3 h-9 w-72 max-w-full" />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+          <div className="space-y-6">
+            <SkeletonCard lines={6} />
+            <SkeletonCard lines={4} />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-32 w-full rounded-3xl" />
+            <SkeletonCard lines={4} />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const level = analysis?.risk_level as RiskLevel | undefined;

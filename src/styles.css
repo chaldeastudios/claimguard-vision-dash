@@ -5,15 +5,15 @@
 @import "@fontsource/ibm-plex-serif/400-italic.css";
 @import "@fontsource/ibm-plex-serif/500.css";
 @import "@fontsource/ibm-plex-serif/600.css";
-@import "@fontsource/ibm-plex-sans/400.css";
-@import "@fontsource/ibm-plex-sans/500.css";
-@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/sora/400.css";
+@import "@fontsource/sora/500.css";
+@import "@fontsource/sora/600.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-serif: "IBM Plex Serif", Georgia, serif;
-  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-sans: "Sora", system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 2px);
@@ -148,4 +148,27 @@
   font-style: italic;
   color: var(--brand-orange);
   font-weight: 400;
+}
+
+/* Loading skeletons -- a sweeping gradient shimmer rather than a plain
+   opacity pulse, tinted to the brand cream so it reads as "this card is
+   still loading" rather than "this is disabled". See Skeleton component. */
+@keyframes shimmer-sweep {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 150% 0;
+  }
+}
+
+@utility animate-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    var(--brand-cream) 35%,
+    oklch(0.98 0.006 70) 50%,
+    var(--brand-cream) 65%
+  );
+  background-size: 250% 100%;
+  animation: shimmer-sweep 1.6s ease-in-out infinite;
 }

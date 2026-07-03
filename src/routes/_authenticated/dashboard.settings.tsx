@@ -7,6 +7,7 @@ import { Loader2, Save, User, ImageUp } from "lucide-react";
 import { CURRENT_PROFILE_QUERY_KEY, fetchCurrentProfile } from "@/lib/current-profile";
 import { uploadOrganizationLogo } from "@/lib/organization-logo";
 import { OrganizationLogo } from "@/components/brand/organization-logo";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
   component: Settings,
@@ -84,11 +85,7 @@ function Settings() {
         </p>
         <div className="mt-6 flex items-center gap-6">
           <div className="flex h-24 w-48 items-center justify-center rounded-2xl bg-background/60 p-4">
-            {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            ) : (
-              <OrganizationLogo logoUrl={profile?.logoUrl} className="h-16" />
-            )}
+            <OrganizationLogo logoUrl={profile?.logoUrl} loading={isLoading} className="h-16" />
           </div>
           <div>
             <input
@@ -121,8 +118,16 @@ function Settings() {
           <User className="h-4 w-4 text-[color:var(--brand-brown)]" /> Profile
         </h2>
         {isLoading ? (
-          <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          <div className="mt-6 space-y-4">
+            <div>
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="mt-2 h-9 w-full rounded-full" />
+            </div>
+            <div>
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="mt-2 h-9 w-full rounded-full" />
+            </div>
+            <Skeleton className="h-10 w-36 rounded-full" />
           </div>
         ) : (
           <div className="mt-6 space-y-4">

@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { fetchPolicy, fetchPremiumsByPolicy } from "@/lib/policy-api";
 import { fmtKES } from "@/lib/claims-api";
 import { PremiumDialog } from "@/components/premium-dialog";
+import { SkeletonDetailPage } from "@/components/skeletons";
 import { ArrowLeft, ShieldCheck, Wallet } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/policies/$policyId")({
@@ -58,8 +59,8 @@ function PolicyDetail() {
     );
   }
 
-  if (isLoading || !policy) {
-    return <div className="p-10 text-muted-foreground">Loading policy…</div>;
+  if (isLoading || premiumsLoading || !policy) {
+    return <SkeletonDetailPage />;
   }
 
   const totalPaid = premiums.reduce((s, p) => s + p.amount, 0);
@@ -142,7 +143,7 @@ function PolicyDetail() {
                         colSpan={6}
                         className="px-4 py-8 text-center text-sm text-muted-foreground"
                       >
-                        {premiumsLoading ? "Loading contributions…" : "No contributions recorded."}
+                        No contributions recorded.
                       </td>
                     </tr>
                   )}
