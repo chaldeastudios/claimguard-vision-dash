@@ -81,27 +81,19 @@ services:
       # cookie, which a stateless JWT/bearer API client (like the
       # ClaimGuard dashboard's server-side GraphQL client) never
       # establishes, so it fails with a KeyError on request.session before
-      # ever comparing tokens. USER_AGENT_CSRF_BYPASS (settings/security.py)
-      # is the surgical fix for that: it only affects _check_csrf_token,
-      # matched by substring against our client's own User-Agent header
-      # (openimis.server.ts sends "ClaimGuard-Dashboard"). An earlier
-      # attempt at MODE=dev for this same problem was reverted because
-      # openIMIS/settings/dev.py never set ALLOWED_HOSTS from env, breaking
-      # it -- we're trying MODE=Dev again below per the hackathon admins'
-      # fix, with ALLOWED_HOSTS still forced below as a hedge in case that's
-      # still true; revert MODE=Dev first if login/API access breaks.
+      # ever comparing tokens. MODE=dev also bypasses this check but was
+      # rejected -- openIMIS/settings/dev.py never sets ALLOWED_HOSTS (it's
+      # commented out there, only prod.py reads the env var), so MODE=dev
+      # silently broke ALLOWED_HOSTS instead. A later attempt at MODE=Dev +
+      # JWT_COOKIE_SECURE=False (per the hackathon admins' login-fix doc) was
+      # also tried and reverted -- didn't fix the reported session issue.
+      # USER_AGENT_CSRF_BYPASS (settings/security.py) is the surgical
+      # alternative that's actually confirmed working: it only affects
+      # _check_csrf_token, matched by substring against our client's own
+      # User-Agent header (openimis.server.ts sends "ClaimGuard-Dashboard").
       - USER_AGENT_CSRF_BYPASS=ClaimGuard-Dashboard
       - SECRET_KEY=django-insecure-claimguard-openimis-integration-key-100%
       - ALLOWED_HOSTS=*
-      # Switches openIMIS to its dev settings module. Per the hackathon
-      # admins' fix doc: production mode sets JWT_COOKIE_SECURE=True, which
-      # makes the browser silently refuse to send the auth cookie back over
-      # plain HTTP -- looks exactly like sessions expiring almost
-      # immediately. JWT_COOKIE_SECURE=False below is the direct fix for
-      # that; MODE=Dev is redundant with it but included since that's what
-      # was recommended.
-      - MODE=Dev
-      - JWT_COOKIE_SECURE=False
       - OPENIMIS_MODULES_CONFIG=/app/openimis.json
       # The openimis-fe frontend's bundled nginx forwards requests unchanged
       # to whatever path it received (no prefix stripping) — it always calls
@@ -142,27 +134,19 @@ services:
       # cookie, which a stateless JWT/bearer API client (like the
       # ClaimGuard dashboard's server-side GraphQL client) never
       # establishes, so it fails with a KeyError on request.session before
-      # ever comparing tokens. USER_AGENT_CSRF_BYPASS (settings/security.py)
-      # is the surgical fix for that: it only affects _check_csrf_token,
-      # matched by substring against our client's own User-Agent header
-      # (openimis.server.ts sends "ClaimGuard-Dashboard"). An earlier
-      # attempt at MODE=dev for this same problem was reverted because
-      # openIMIS/settings/dev.py never set ALLOWED_HOSTS from env, breaking
-      # it -- we're trying MODE=Dev again below per the hackathon admins'
-      # fix, with ALLOWED_HOSTS still forced below as a hedge in case that's
-      # still true; revert MODE=Dev first if login/API access breaks.
+      # ever comparing tokens. MODE=dev also bypasses this check but was
+      # rejected -- openIMIS/settings/dev.py never sets ALLOWED_HOSTS (it's
+      # commented out there, only prod.py reads the env var), so MODE=dev
+      # silently broke ALLOWED_HOSTS instead. A later attempt at MODE=Dev +
+      # JWT_COOKIE_SECURE=False (per the hackathon admins' login-fix doc) was
+      # also tried and reverted -- didn't fix the reported session issue.
+      # USER_AGENT_CSRF_BYPASS (settings/security.py) is the surgical
+      # alternative that's actually confirmed working: it only affects
+      # _check_csrf_token, matched by substring against our client's own
+      # User-Agent header (openimis.server.ts sends "ClaimGuard-Dashboard").
       - USER_AGENT_CSRF_BYPASS=ClaimGuard-Dashboard
       - SECRET_KEY=django-insecure-claimguard-openimis-integration-key-100%
       - ALLOWED_HOSTS=*
-      # Switches openIMIS to its dev settings module. Per the hackathon
-      # admins' fix doc: production mode sets JWT_COOKIE_SECURE=True, which
-      # makes the browser silently refuse to send the auth cookie back over
-      # plain HTTP -- looks exactly like sessions expiring almost
-      # immediately. JWT_COOKIE_SECURE=False below is the direct fix for
-      # that; MODE=Dev is redundant with it but included since that's what
-      # was recommended.
-      - MODE=Dev
-      - JWT_COOKIE_SECURE=False
       - OPENIMIS_MODULES_CONFIG=/app/openimis.json
       # The openimis-fe frontend's bundled nginx forwards requests unchanged
       # to whatever path it received (no prefix stripping) — it always calls
@@ -219,8 +203,6 @@ services:
       - USER_AGENT_CSRF_BYPASS=ClaimGuard-Dashboard
       - SECRET_KEY=django-insecure-claimguard-openimis-integration-key-100%
       - ALLOWED_HOSTS=*
-      - MODE=Dev
-      - JWT_COOKIE_SECURE=False
       - OPENIMIS_MODULES_CONFIG=/app/openimis.json
       - SITE_ROOT=api/
       - SUPABASE_URL=${VITE_SUPABASE_URL}
