@@ -35,12 +35,30 @@ export const analyzeClaim = createServerFn({ method: "POST" })
     const claim = await getOpenimisClaim(data.claimId);
     if (!claim) throw new Error("Claim not found");
 
+    const lineItemsText = claim.lineItems.length
+      ? claim.lineItems
+          .map(
+            (li) =>
+              `- [${li.kind}] ${li.code} ${li.name}: qty ${li.quantityProvided ?? "?"}, asked KES ${li.priceAsked ?? "?"}, approved KES ${li.priceApproved ?? "not yet approved"}`,
+          )
+          .join("\n")
+      : "not recorded";
+    const otherDiagnosesText = claim.otherDiagnoses.length
+      ? claim.otherDiagnoses.map((d) => `${d.code} — ${d.name}`).join(", ")
+      : "none";
+
     const userPrompt = `Claim ID: ${claim.code}
 Patient: ${claim.patient} (${claim.patientId})
 Facility: ${claim.facility}
-Diagnosis: ${claim.diagnosisCode} — ${claim.diagnosis}
-Services billed: ${claim.services.length ? claim.services.join(", ") : "not recorded"}
-Amount billed: KES ${claim.amount.toLocaleString("en-KE")}
+Visit type: ${claim.visitType ?? "not recorded"}
+Primary diagnosis: ${claim.diagnosisCode} — ${claim.diagnosis}
+Secondary diagnoses: ${otherDiagnosesText}
+Items/services billed:
+${lineItemsText}
+Amount claimed: KES ${claim.amount.toLocaleString("en-KE")}
+Amount approved: ${claim.approved != null ? `KES ${claim.approved.toLocaleString("en-KE")}` : "not yet approved"}
+Amount valuated: ${claim.valuated != null ? `KES ${claim.valuated.toLocaleString("en-KE")}` : "not yet valuated"}
+Date of service: ${claim.dateFrom ?? "unknown"} to ${claim.dateTo ?? "unknown"}
 Submitted: ${claim.submittedAt}
 
 Analyze this claim for fraud, abuse, or billing irregularities.`;

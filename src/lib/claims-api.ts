@@ -2,7 +2,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
-import { getOpenimisClaims, getOpenimisClaim, type Claim } from "./openimis.server";
+import {
+  getOpenimisClaims,
+  getOpenimisClaim,
+  type Claim,
+  type ClaimDetail,
+} from "./openimis.server";
 import type { Database } from "@/integrations/supabase/types";
 
 export type RiskLevel = "High" | "Medium" | "Low";
@@ -13,7 +18,7 @@ export interface FraudReason {
 
 export type AnalysisRow = Database["public"]["Tables"]["claim_risk_analysis"]["Row"];
 
-export type { Claim };
+export type { Claim, ClaimDetail };
 export interface ClaimWithAnalysis extends Claim {
   analysis: AnalysisRow | null;
 }
@@ -44,7 +49,7 @@ const FetchClaimInput = z.object({ claimId: z.string().min(1) });
 export const fetchClaim = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => FetchClaimInput.parse(data))
-  .handler(async ({ data }): Promise<Claim | null> => getOpenimisClaim(data.claimId));
+  .handler(async ({ data }): Promise<ClaimDetail | null> => getOpenimisClaim(data.claimId));
 
 export async function fetchLatestAnalysis(claimId: string): Promise<AnalysisRow | null> {
   const { data, error } = await supabase
