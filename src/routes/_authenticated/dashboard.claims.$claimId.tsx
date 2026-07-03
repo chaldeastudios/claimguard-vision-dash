@@ -15,7 +15,13 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonCard } from "@/components/skeletons";
 
+// autoAnalyze lets an external deep link (the openIMIS claims list's "AI
+// Analysis" button, see the openimis-fe-fraud_js module) land here and
+// immediately kick off analysis instead of requiring a second click.
 export const Route = createFileRoute("/_authenticated/dashboard/claims/$claimId")({
+  validateSearch: (search: Record<string, unknown>): { autoAnalyze?: boolean } => ({
+    autoAnalyze: search.autoAnalyze === "1" || search.autoAnalyze === true ? true : undefined,
+  }),
   component: ClaimDetail,
   notFoundComponent: () => <div className="p-10 text-muted-foreground">Claim not found.</div>,
   errorComponent: ({ error }) => (
@@ -68,11 +74,13 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 
 function ClaimDetail() {
   const { claimId } = Route.useParams();
+  const { autoAnalyze } = Route.useSearch();
   const qc = useQueryClient();
   const fetchClaimFn = useServerFn(fetchClaim);
   const analyzeFn = useServerFn(analyzeClaim);
   const [analyzing, setAnalyzing] = useState(false);
   const [justAnalyzed, setJustAnalyzed] = useState(false);
+  const [autoAnalyzeFired, setAutoAnalyzeFired] = useState(false);
 
   const {
     data: c,
@@ -108,6 +116,13 @@ function ClaimDetail() {
       setAnalyzing(false);
     }
   }
+
+  useEffect(() => {
+    if (!autoAnalyze || autoAnalyzeFired || !c || analysis || analyzing) return;
+    setAutoAnalyzeFired(true);
+    runAnalysis();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoAnalyze, autoAnalyzeFired, c, analysis, analyzing]);
 
   if (isError) {
     return (
