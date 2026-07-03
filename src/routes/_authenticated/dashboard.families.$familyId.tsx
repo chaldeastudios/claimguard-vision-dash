@@ -2,7 +2,9 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchFamily, fetchFamilyMembers } from "@/lib/families-api";
-import { ArrowLeft, Crown, Users } from "lucide-react";
+import { fetchPoliciesByFamily } from "@/lib/policy-api";
+import { fmtKES } from "@/lib/claims-api";
+import { ArrowLeft, Crown, Users, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/families/$familyId")({
   component: FamilyDetail,
@@ -36,6 +38,13 @@ function FamilyDetail() {
   const { data: members = [], isLoading: membersLoading } = useQuery({
     queryKey: ["family-members", familyId],
     queryFn: () => fetchFamilyMembersFn({ data: { familyId } }),
+    enabled: !!family,
+  });
+
+  const fetchPoliciesByFamilyFn = useServerFn(fetchPoliciesByFamily);
+  const { data: policies = [], isLoading: policiesLoading } = useQuery({
+    queryKey: ["family-policies", familyId],
+    queryFn: () => fetchPoliciesByFamilyFn({ data: { familyId } }),
     enabled: !!family,
   });
 
@@ -141,6 +150,52 @@ function FamilyDetail() {
               </div>
             </dl>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-3xl bg-[color:var(--brand-cream)] p-7">
+        <h2 className="flex items-center gap-2 font-serif text-xl">
+          <ShieldCheck className="h-4 w-4 text-[color:var(--brand-orange)]" />
+          Policies
+        </h2>
+        <div className="mt-5 overflow-hidden rounded-2xl bg-background/60">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">Product</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Value</th>
+                <th className="px-4 py-3">Enrolled</th>
+                <th className="px-4 py-3">Expiry</th>
+              </tr>
+            </thead>
+            <tbody>
+              {policies.map((p) => (
+                <tr key={p.id} className="border-t border-border/40 hover:bg-background/80">
+                  <td className="px-4 py-3">
+                    <Link
+                      to="/dashboard/policies/$policyId"
+                      params={{ policyId: p.id }}
+                      className="font-medium text-[color:var(--brand-brown)] hover:underline"
+                    >
+                      {p.productCode} — {p.productName}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 capitalize text-foreground">{p.status}</td>
+                  <td className="px-4 py-3 text-right text-foreground">{fmtKES(p.value)}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{p.enrollDate ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{p.expiryDate ?? "—"}</td>
+                </tr>
+              ))}
+              {policies.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    {policiesLoading ? "Loading policies…" : "No policies recorded."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
