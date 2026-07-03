@@ -201,9 +201,35 @@ function ClaimDetail() {
               <div>
                 <dt className="text-muted-foreground">Patient</dt>
                 <dd className="text-foreground">
-                  {c.patient} ({c.patientId})
+                  {c.insureeId ? (
+                    <Link
+                      to="/dashboard/insurees/$insureeId"
+                      params={{ insureeId: c.insureeId }}
+                      className="text-[color:var(--brand-brown)] hover:underline"
+                    >
+                      {c.patient} ({c.patientId})
+                    </Link>
+                  ) : (
+                    <>
+                      {c.patient} ({c.patientId})
+                    </>
+                  )}
                 </dd>
               </div>
+              {c.familyId && (
+                <div>
+                  <dt className="text-muted-foreground">Household</dt>
+                  <dd className="text-foreground">
+                    <Link
+                      to="/dashboard/families/$familyId"
+                      params={{ familyId: c.familyId }}
+                      className="text-[color:var(--brand-brown)] hover:underline"
+                    >
+                      View household & policies
+                    </Link>
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt className="text-muted-foreground">Facility</dt>
                 <dd className="text-foreground">{c.facility}</dd>

@@ -8,6 +8,8 @@ export interface Claim {
   code: string; // human-readable claim code, e.g. CLM-2026-61545
   patient: string;
   patientId: string;
+  insureeId: string | null; // for cross-linking to /dashboard/insurees/$insureeId
+  familyId: string | null; // for cross-linking to /dashboard/families/$familyId
   facility: string;
   diagnosisCode: string;
   diagnosis: string;
@@ -24,7 +26,13 @@ interface OpenimisClaimNode {
   dateFrom: string | null;
   claimed: number | string;
   status: number | null;
-  insuree: { chfId: string | null; lastName: string | null; otherNames: string | null } | null;
+  insuree: {
+    uuid: string | null;
+    chfId: string | null;
+    lastName: string | null;
+    otherNames: string | null;
+    family: { uuid: string | null } | null;
+  } | null;
   healthFacility: { name: string | null } | null;
   icd: { code: string | null; name: string | null } | null;
 }
@@ -40,7 +48,7 @@ const CLAIMS_QUERY = `
           dateFrom
           claimed
           status
-          insuree { chfId lastName otherNames }
+          insuree { uuid chfId lastName otherNames family { uuid } }
           healthFacility { name }
           icd { code name }
         }
@@ -67,6 +75,8 @@ function mapClaim(node: OpenimisClaimNode): Claim {
     code: node.code,
     patient,
     patientId: node.insuree?.chfId ?? "—",
+    insureeId: node.insuree?.uuid ?? null,
+    familyId: node.insuree?.family?.uuid ?? null,
     facility: node.healthFacility?.name ?? "Unknown facility",
     diagnosisCode: node.icd?.code ?? "",
     diagnosis: node.icd?.name ?? "",
