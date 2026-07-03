@@ -202,6 +202,35 @@ const UPDATE_INSUREE_MUTATION = `
   }
 `;
 
+export interface UpdateFamilyInput {
+  uuid: string;
+  address: string | null;
+  poverty: boolean;
+  confirmationNo: string | null;
+}
+
+// UpdateFamilyMutationInput has no required fields beyond the id -- omitting
+// locationId/headInsuree keeps this out of integer-id/nested-type territory
+// we haven't confirmed yet (see updateOpenimisInsuree's comment on the same
+// partial-update behavior).
+const UPDATE_FAMILY_MUTATION = `
+  mutation UpdateFamily($input: UpdateFamilyMutationInput!) {
+    updateFamily(input: $input) { clientMutationId }
+  }
+`;
+
+export async function updateOpenimisFamily(input: UpdateFamilyInput): Promise<void> {
+  await graphqlRequest(UPDATE_FAMILY_MUTATION, {
+    input: {
+      clientMutationId: crypto.randomUUID(),
+      uuid: input.uuid,
+      address: input.address,
+      poverty: input.poverty,
+      confirmationNo: input.confirmationNo,
+    },
+  });
+}
+
 export async function updateOpenimisInsuree(input: UpdateInsureeInput): Promise<void> {
   await graphqlRequest(UPDATE_INSUREE_MUTATION, {
     input: {

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { fetchClaims, facilitiesList, fmtKES, type RiskLevel } from "@/lib/claims-api";
+import { fetchClaims, fmtKES, type RiskLevel } from "@/lib/claims-api";
 import { pendingClaimIds } from "@/lib/pending-analysis";
 import { ShieldAlert, TrendingUp, Wallet, Activity, Search, Loader2 } from "lucide-react";
 
@@ -159,6 +159,11 @@ function Overview() {
   const [risk, setRisk] = useState<"All" | RiskLevel | "Pending">("All");
   const [facility, setFacility] = useState<string>("All");
   const [sortKey, setSortKey] = useState<"score" | "amount" | "date">("date");
+
+  const facilitiesList = useMemo(
+    () => Array.from(new Set(claims.map((c) => c.facility))).sort(),
+    [claims],
+  );
 
   const scored = claims.filter((c) => c.analysis);
   const pending = claims.filter((c) => !c.analysis);

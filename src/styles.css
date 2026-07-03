@@ -69,14 +69,14 @@
   --radius: 0.5rem;
 
   /* Brand */
-  --background: oklch(0.991 0.005 90);             /* #fffefb warm off-white */
-  --foreground: oklch(0.235 0.012 50);             /* near-black warm */
+  --background: oklch(0.991 0.005 90); /* #fffefb warm off-white */
+  --foreground: oklch(0.235 0.012 50); /* near-black warm */
   --card: oklch(0.991 0.005 90);
   --card-foreground: oklch(0.235 0.012 50);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.235 0.012 50);
 
-  --primary: oklch(0.52 0.045 45);                 /* warm brown ~rgb(141,105,89) */
+  --primary: oklch(0.52 0.045 45); /* warm brown ~rgb(141,105,89) */
   --primary-foreground: oklch(0.99 0.005 90);
   --secondary: oklch(0.94 0.012 70);
   --secondary-foreground: oklch(0.235 0.012 50);
@@ -91,14 +91,14 @@
   --input: oklch(0.9 0.01 70);
   --ring: oklch(0.52 0.045 45);
 
-  --brand-cream: oklch(0.94 0.012 70);             /* card beige */
-  --brand-sage: oklch(0.71 0.06 115);              /* sage rgb(161,161,106) */
+  --brand-cream: oklch(0.94 0.012 70); /* card beige */
+  --brand-sage: oklch(0.71 0.06 115); /* sage rgb(161,161,106) */
   --brand-sage-foreground: oklch(0.99 0.005 90);
   --brand-brown: oklch(0.52 0.045 45);
   --brand-brown-foreground: oklch(0.99 0.005 90);
-  --brand-ink: oklch(0.27 0.012 45);               /* rgb(41,37,36) */
+  --brand-ink: oklch(0.27 0.012 45); /* rgb(41,37,36) */
   --brand-ink-foreground: oklch(0.99 0.005 90);
-  --brand-orange: oklch(0.68 0.21 38);             /* rgb(251,96,50) */
+  --brand-orange: oklch(0.68 0.21 38); /* rgb(251,96,50) */
 
   --risk-high: oklch(0.58 0.22 27);
   --risk-med: oklch(0.72 0.17 60);
@@ -114,39 +114,22 @@
   --sidebar-ring: oklch(0.68 0.21 38);
 }
 
-/* Institution branding overrides (src/lib/institutions.ts) -- demo-a matches
-   the :root defaults above, so only demo-b/demo-c need overrides here. All
-   three institutions read/write the same openIMIS backend; this is a
-   presentation-layer switch only. */
-:root[data-institution="demo-b"] {
-  --brand-brown: oklch(0.5 0.05 210);
-  --brand-brown-foreground: oklch(0.99 0.005 90);
-  --brand-orange: oklch(0.65 0.16 195);
-  --ring: oklch(0.5 0.05 210);
-  --sidebar-primary: oklch(0.65 0.16 195);
-  --sidebar-ring: oklch(0.65 0.16 195);
-}
-
-:root[data-institution="demo-c"] {
-  --brand-brown: oklch(0.5 0.06 320);
-  --brand-brown-foreground: oklch(0.99 0.005 90);
-  --brand-orange: oklch(0.66 0.19 305);
-  --ring: oklch(0.5 0.06 320);
-  --sidebar-primary: oklch(0.66 0.19 305);
-  --sidebar-ring: oklch(0.66 0.19 305);
-}
-
 @layer base {
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4, h5 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
     font-family: var(--font-serif);
     font-weight: 400;
     letter-spacing: -0.01em;

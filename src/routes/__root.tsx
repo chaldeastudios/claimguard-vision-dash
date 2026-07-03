@@ -104,28 +104,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-// Sets the institution branding attribute before first paint, same pattern
-// as a dark-mode init script -- without this, the page would flash the
-// default institution's colors before React hydrates and applies the
-// stored selection (see src/lib/institutions.ts).
-const INSTITUTION_INIT_SCRIPT = `
-try {
-  var id = window.localStorage.getItem("institution-id");
-  if (id) document.documentElement.dataset.institution = id;
-} catch (e) {}
-`;
-
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    // suppressHydrationWarning: INSTITUTION_INIT_SCRIPT below sets
-    // data-institution on this element before React hydrates, deliberately
-    // out of band (same reason dark-mode init scripts need this) -- without
-    // it, React treats the attribute as a server/client mismatch and logs a
-    // hydration warning even though nothing is actually wrong.
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
         <HeadContent />
-        <script dangerouslySetInnerHTML={{ __html: INSTITUTION_INIT_SCRIPT }} />
       </head>
       <body>
         {children}

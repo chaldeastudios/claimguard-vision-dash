@@ -66,16 +66,3 @@ export async function fetchLatestAnalysis(claimId: string): Promise<AnalysisRow 
 export function fmtKES(n: number): string {
   return "KES " + n.toLocaleString("en-KE");
 }
-
-export const facilitiesList = [
-  "Kenyatta National Hospital",
-  "Aga Khan University Hospital",
-  "Nakuru Level 5 Hospital",
-  "Mater Misericordiae Hospital",
-  "Moi Teaching and Referral Hospital",
-  "Coast General Hospital",
-  "Gertrude's Children's Hospital",
-  "Karen Hospital",
-  "MP Shah Hospital",
-  "Avenue Hospital Kisumu",
-];

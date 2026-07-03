@@ -7,6 +7,7 @@ import {
   getOpenimisFamilyMembers,
   getOpenimisInsuree,
   updateOpenimisInsuree,
+  updateOpenimisFamily,
   type Family,
   type Insuree,
 } from "./insuree.server";
@@ -53,3 +54,15 @@ export const updateInsuree = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => UpdateInsureeInput.parse(data))
   .handler(async ({ data }): Promise<void> => updateOpenimisInsuree(data));
+
+const UpdateFamilyInput = z.object({
+  uuid: z.string().min(1),
+  address: z.string().nullable(),
+  poverty: z.boolean(),
+  confirmationNo: z.string().nullable(),
+});
+
+export const updateFamily = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => UpdateFamilyInput.parse(data))
+  .handler(async ({ data }): Promise<void> => updateOpenimisFamily(data));

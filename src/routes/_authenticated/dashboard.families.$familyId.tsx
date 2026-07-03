@@ -1,9 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchFamily, fetchFamilyMembers } from "@/lib/families-api";
 import { fetchPoliciesByFamily } from "@/lib/policy-api";
 import { fmtKES } from "@/lib/claims-api";
+import { FamilyEditDialog } from "@/components/family-edit-dialog";
 import { ArrowLeft, Crown, Users, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/families/$familyId")({
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/families/$family
 
 function FamilyDetail() {
   const { familyId } = Route.useParams();
+  const qc = useQueryClient();
   const fetchFamilyFn = useServerFn(fetchFamily);
   const fetchFamilyMembersFn = useServerFn(fetchFamilyMembers);
 
@@ -70,9 +72,15 @@ function FamilyDetail() {
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to families
         </Link>
-        <h1 className="mt-2 font-serif text-4xl">
-          <span className="accent-word">{family.headName}</span>'s household
-        </h1>
+        <div className="mt-2 flex items-center justify-between gap-4">
+          <h1 className="font-serif text-4xl">
+            <span className="accent-word">{family.headName}</span>'s household
+          </h1>
+          <FamilyEditDialog
+            family={family}
+            onSaved={() => qc.invalidateQueries({ queryKey: ["family", familyId] })}
+          />
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">

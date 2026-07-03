@@ -1,9 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LogoMark } from "@/components/brand/icons";
+import { InstitutionLogo } from "@/components/brand/institution-logo";
 import { toast } from "sonner";
-import { institutions, getStoredInstitutionId, setInstitution } from "@/lib/institutions";
+import {
+  institutions,
+  getInstitution,
+  getStoredInstitutionId,
+  setInstitution,
+} from "@/lib/institutions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — ClaimGuard" }] }),
@@ -66,7 +71,7 @@ function AuthPage() {
     <div className="flex min-h-screen bg-[color:var(--brand-cream)]">
       <div className="hidden flex-1 flex-col justify-between bg-[color:var(--sidebar)] p-12 text-white lg:flex">
         <Link to="/">
-          <LogoMark className="h-9 w-auto text-[color:var(--brand-orange)]" />
+          <InstitutionLogo institution={getInstitution(institutionId)} className="h-10 w-10" />
         </Link>
         <div className="max-w-md space-y-6">
           <h1 className="font-serif text-4xl leading-tight">

@@ -1,10 +1,15 @@
 import { Outlet, createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LogoMark } from "@/components/brand/icons";
+import { InstitutionLogo } from "@/components/brand/institution-logo";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, Settings as SettingsIcon, Bell } from "lucide-react";
-import { institutions, getStoredInstitutionId, setInstitution } from "@/lib/institutions";
+import {
+  institutions,
+  getInstitution,
+  getStoredInstitutionId,
+  setInstitution,
+} from "@/lib/institutions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "ClaimGuard — Reviewer Dashboard" }] }),
@@ -67,8 +72,8 @@ function DashboardLayout() {
     <div className="min-h-screen w-full bg-background">
       <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background px-6 py-4 md:px-10">
         <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center text-[color:var(--brand-brown)]">
-            <LogoMark className="h-7 w-auto" />
+          <Link to="/" className="flex items-center">
+            <InstitutionLogo institution={getInstitution(institutionId)} className="h-8 w-8" />
           </Link>
           <select
             value={institutionId}
