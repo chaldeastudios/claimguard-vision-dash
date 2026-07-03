@@ -28,6 +28,23 @@ COPY openimis.json /app/openimis.json
 COPY openimis-be-fraud_py /opt/openimis/openimis-be-fraud_py
 RUN pip install --no-cache-dir /opt/openimis/openimis-be-fraud_py
 
+# Serve cleanly over plain HTTP (localhost demo, and Railway's own TLS
+# terminates upstream anyway). openIMIS hardcodes SESSION_COOKIE_SECURE =
+# True in settings/security.py -- NOT env-controllable -- which marks the
+# session cookie Secure, so a browser on http:// silently drops it and the
+# very next navigation fails auth and logs the user straight back out. This
+# is the actual root cause of the "session ends when I click any menu item"
+# symptom (confirmed: JWT access tokens last a day here, so it isn't
+# expiry; and the organizers' own HTTP-served instance works precisely
+# because they set this False). Patch it to False at build time. The `find`
+# makes this resilient to the settings file's exact path inside the base
+# image changing between versions. Additive and low-risk -- it only clears
+# the cookie's Secure flag, it does NOT touch MODE/ALLOWED_HOSTS/auth, so
+# it can't reintroduce the admin-login/host-allowlist breakage the earlier
+# MODE=Dev attempt caused.
+RUN find / -path '*settings/security.py' -type f \
+      -exec sed -i 's/^SESSION_COOKIE_SECURE = True/SESSION_COOKIE_SECURE = False/' {} + || true
+
 # The base image's ENTRYPOINT is a script that dispatches on its first arg
 # (start, manage, worker, etc — see docker-compose.yml's `command: start`).
 # Setting CMD here (rather than a Railway "Custom Start Command" override)
