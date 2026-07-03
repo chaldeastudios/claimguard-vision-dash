@@ -364,7 +364,17 @@ function buildClaimLine(
 // UNVERIFIED against this live deployment (see that function's comment). A
 // wrong decode fails the whole mutation with a clear error rather than
 // attaching the claim to the wrong record.
-export async function createOpenimisClaim(input: SubmitClaimInput): Promise<{ code: string }> {
+const CLAIM_UUID_BY_CODE_QUERY = `
+  query ClaimUuidByCode($code: String!) {
+    claims(code: $code, first: 1) {
+      edges { node { uuid } }
+    }
+  }
+`;
+
+export async function createOpenimisClaim(
+  input: SubmitClaimInput,
+): Promise<{ code: string; uuid: string | null }> {
   const insureeId = decodeGlobalId(input.insureeGlobalId);
   const healthFacilityId = decodeGlobalId(input.healthFacilityGlobalId);
   const icdId = decodeGlobalId(input.icdGlobalId);
@@ -401,5 +411,19 @@ export async function createOpenimisClaim(input: SubmitClaimInput): Promise<{ co
   });
   await confirmMutation(clientMutationId);
 
-  return { code };
+  // Best-effort -- the claim was already confirmed created above, so a
+  // failure here just means the caller won't get a uuid to tag an insurer
+  // assignment with, not a failed submission.
+  let uuid: string | null = null;
+  try {
+    const lookup = await graphqlRequest<{ claims: { edges: { node: { uuid: string } }[] } }>(
+      CLAIM_UUID_BY_CODE_QUERY,
+      { code },
+    );
+    uuid = lookup.claims?.edges?.[0]?.node?.uuid ?? null;
+  } catch {
+    uuid = null;
+  }
+
+  return { code, uuid };
 }

@@ -8,6 +8,27 @@ export type Database = {
   };
   public: {
     Tables: {
+      claim_insurer_assignment: {
+        Row: {
+          assigned_by: string | null;
+          claim_uuid: string;
+          created_at: string;
+          insurer_organization_id: string;
+        };
+        Insert: {
+          assigned_by?: string | null;
+          claim_uuid: string;
+          created_at?: string;
+          insurer_organization_id: string;
+        };
+        Update: {
+          assigned_by?: string | null;
+          claim_uuid?: string;
+          created_at?: string;
+          insurer_organization_id?: string;
+        };
+        Relationships: [];
+      };
       claim_risk_analysis: {
         Row: {
           claim_id: string;
@@ -50,29 +71,62 @@ export type Database = {
         };
         Relationships: [];
       };
+      organizations: {
+        Row: {
+          created_at: string;
+          facility_uuid: string | null;
+          id: string;
+          logo_url: string | null;
+          name: string;
+          type: string;
+        };
+        Insert: {
+          created_at?: string;
+          facility_uuid?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          name: string;
+          type: string;
+        };
+        Update: {
+          created_at?: string;
+          facility_uuid?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          name?: string;
+          type?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
+          account_type: string;
           created_at: string;
           email: string | null;
           full_name: string | null;
           id: string;
           logo_url: string | null;
+          organization_id: string | null;
           updated_at: string;
         };
         Insert: {
+          account_type?: string;
           created_at?: string;
           email?: string | null;
           full_name?: string | null;
           id: string;
           logo_url?: string | null;
+          organization_id?: string | null;
           updated_at?: string;
         };
         Update: {
+          account_type?: string;
           created_at?: string;
           email?: string | null;
           full_name?: string | null;
           id?: string;
           logo_url?: string | null;
+          organization_id?: string | null;
           updated_at?: string;
         };
         Relationships: [];

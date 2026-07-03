@@ -1,5 +1,14 @@
 # Demo Data
 
+> **`seed.sql` below is legacy and no longer used.** It predates the pivot
+> to live openIMIS integration and writes into its own parallel `tblHF`/
+> `tblInsuree`/... tables, not the real Django models
+> (`location_healthfacility`, `insuree_insuree`, ...) the app actually reads
+> over GraphQL. For real demo data, use the Django shell scripts in
+> `../scripts/` (`seed_hospitals.py`, plus the existing pattern of ad-hoc
+> `manage.py shell` scripts for claims) and `../scripts/seed-accounts.mjs`
+> for the hospital/insurer login accounts. Kept here for reference only.
+
 This directory contains seed data for the **ClaimGuard × openIMIS** development environment.
 
 ## Contents

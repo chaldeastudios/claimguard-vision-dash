@@ -160,29 +160,17 @@ class FraudScoringService:
             "Prefer": "resolution=merge-duplicates"
         }
 
-        # 1. Prepare and sync claim entry to 'claims' table
-        claim_data = {
-            "id": str(claim.uuid),
-            "patient_name": f"{claim.insuree.first_name} {claim.insuree.last_name}" if claim.insuree else "Unknown Patient",
-            "facility_name": claim.health_facility.name if claim.health_facility else "Unknown Facility",
-            "diagnosis_code": claim.diagnoses.first().code if claim.diagnoses.first() else "N/A",
-            "diagnosis_name": claim.diagnoses.first().name if claim.diagnoses.first() else "N/A",
-            "amount": float(claim.claimed),
-            "currency": "KES",
-            "status": "flagged" if risk_level == "High" else "pending"
-        }
-
-        # Upsert the claim record into Supabase using POST with merge resolution
-        claim_res = requests.post(f"{supabase_url}/rest/v1/claims", json=claim_data, headers=headers)
-        if claim_res.status_code not in [200, 201]:
-            logger.error(f"Supabase Claim Sync failed (status {claim_res.status_code}): {claim_res.text}")
-            return
-
-        # 2. Prepare and sync risk analysis entry to 'claim_risk_analysis' table
+        # Sync risk analysis entry to 'claim_risk_analysis' table. There is no
+        # 'claims' table on the Supabase side anymore -- claims live in
+        # openIMIS and are read live over GraphQL; this table only holds
+        # ClaimGuard's own AI/heuristic analysis output, keyed by claim uuid.
         analysis_data = {
             "claim_id": str(claim.uuid),
+            "model": "rule-based",
             "risk_score": float(score),
             "risk_level": risk_level,
+            "recommendation": "Investigate" if risk_level == "High" else "Approve",
+            "summary": reasons[0] if reasons else "No summary available.",
             "reasons": reasons
         }
 

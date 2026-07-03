@@ -1,140 +1,51 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Building2, ShieldCheck } from "lucide-react";
 import { LogoMark } from "@/components/brand/icons";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — ClaimGuard" }] }),
-  component: AuthPage,
+  component: AuthChooser,
 });
 
-function AuthPage() {
-  const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/dashboard" });
-    });
-  }, [navigate]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin + "/dashboard",
-            data: { full_name: name },
-          },
-        });
-        if (error) throw error;
-        toast.success("Account created. You're signed in.");
-        navigate({ to: "/dashboard" });
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate({ to: "/dashboard" });
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Authentication failed");
-    } finally {
-      setLoading(false);
-    }
-  }
-
+function AuthChooser() {
   return (
-    <div className="flex min-h-screen bg-[color:var(--brand-cream)]">
-      <div className="hidden flex-1 flex-col justify-between bg-[color:var(--sidebar)] p-12 text-white lg:flex">
-        <Link to="/">
-          <LogoMark className="h-9 w-auto text-[color:var(--brand-orange)]" />
-        </Link>
-        <div className="max-w-md space-y-6">
-          <h1 className="font-serif text-4xl leading-tight">
-            Fraud review built for national health schemes.
-          </h1>
-          <p className="text-white/70">
-            Sign in to review flagged claims, audit hospitals, and protect public funds.
-          </p>
-        </div>
-        <p className="text-xs text-white/40">© ClaimGuard · Demo environment</p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[color:var(--brand-cream)] px-6 py-16">
+      <Link to="/" className="mb-10">
+        <LogoMark className="h-10 w-auto text-[color:var(--brand-brown)]" />
+      </Link>
+      <div className="text-center">
+        <h1 className="font-serif text-4xl">
+          Sign in to <span className="accent-word">ClaimGuard</span>
+        </h1>
+        <p className="mt-2 text-muted-foreground">Which kind of account are you signing in to?</p>
       </div>
 
-      <div className="flex flex-1 items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-background p-8 shadow-sm">
-          <h2 className="font-serif text-2xl text-foreground">
-            {mode === "signin" ? "Sign in" : "Create your account"}
+      <div className="mt-10 grid w-full max-w-2xl gap-5 sm:grid-cols-2">
+        <Link
+          to="/auth/hospital"
+          className="group rounded-3xl bg-background p-8 text-left transition-transform hover:-translate-y-0.5"
+        >
+          <Building2 className="h-8 w-8 text-[color:var(--brand-brown)]" />
+          <h2 className="mt-4 font-serif text-2xl">
+            Healthcare <span className="accent-word">facility</span>
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signin"
-              ? "Access the ClaimGuard reviewer console."
-              : "Set up access for your scheme team."}
+          <p className="mt-2 text-sm text-muted-foreground">
+            For hospital and clinic staff submitting claims to an insurer for review.
           </p>
+        </Link>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            {mode === "signup" && (
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Full name</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-                />
-              </div>
-            )}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Work email</label>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Password</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-md bg-[color:var(--brand-orange)] px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-            >
-              {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            {mode === "signin" ? "New to ClaimGuard? " : "Already have an account? "}
-            <button
-              type="button"
-              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-              className="font-medium text-[color:var(--brand-orange)] hover:underline"
-            >
-              {mode === "signin" ? "Create an account" : "Sign in"}
-            </button>
+        <Link
+          to="/auth/insurer"
+          className="group rounded-3xl bg-background p-8 text-left transition-transform hover:-translate-y-0.5"
+        >
+          <ShieldCheck className="h-8 w-8 text-[color:var(--brand-brown)]" />
+          <h2 className="mt-4 font-serif text-2xl">
+            Insurance <span className="accent-word">institution</span>
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            For scheme reviewers auditing incoming claims for fraud risk.
           </p>
-        </div>
+        </Link>
       </div>
     </div>
   );

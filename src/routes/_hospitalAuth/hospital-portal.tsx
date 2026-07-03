@@ -1,17 +1,23 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2, Plus, Send, Trash2, CheckCircle2, X } from "lucide-react";
+import { Loader2, Plus, Send, Trash2, CheckCircle2, X, LogOut, Check } from "lucide-react";
 import { OrganizationLogo } from "@/components/brand/organization-logo";
-import { fetchPublicBranding } from "@/lib/public-branding";
+import { supabase } from "@/integrations/supabase/client";
 import {
   fetchPublicHealthFacilities,
   searchPublicInsurees,
   searchPublicInsureesByName,
   submitHospitalClaim,
 } from "@/lib/hospital-portal-api";
+import {
+  fetchHospitalOrgContext,
+  fetchInsurerOrganizations,
+  assignClaimToInsurer,
+  type OrganizationSummary,
+} from "@/lib/organizations";
 import {
   fetchDiagnoses,
   fetchMedicalItems,
@@ -31,10 +37,37 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-export const Route = createFileRoute("/hospital-portal")({
+export const Route = createFileRoute("/_hospitalAuth/hospital-portal")({
   head: () => ({ meta: [{ title: "Submit a Claim" }] }),
   component: HospitalPortal,
 });
+
+function InsurerCard({
+  insurer,
+  selected,
+  onSelect,
+}: {
+  insurer: OrganizationSummary;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={
+        "relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-colors " +
+        (selected
+          ? "border-[color:var(--brand-brown)] bg-[color:var(--brand-cream)]"
+          : "border-border/60 bg-background hover:bg-accent")
+      }
+    >
+      <OrganizationLogo logoUrl={insurer.logoUrl} className="h-8 w-8 shrink-0" />
+      <span className="text-sm font-medium text-foreground">{insurer.name}</span>
+      {selected && <Check className="ml-auto h-4 w-4 shrink-0 text-[color:var(--brand-brown)]" />}
+    </button>
+  );
+}
 
 interface LineRow {
   key: string;
@@ -236,7 +269,10 @@ function LineItemsEditor({
 }
 
 function HospitalPortal() {
-  const fetchBrandingFn = useServerFn(fetchPublicBranding);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const fetchOrgContextFn = useServerFn(fetchHospitalOrgContext);
+  const fetchInsurersFn = useServerFn(fetchInsurerOrganizations);
   const fetchFacilitiesFn = useServerFn(fetchPublicHealthFacilities);
   const searchPatientsByChfFn = useServerFn(searchPublicInsurees);
   const searchPatientsByNameFn = useServerFn(searchPublicInsureesByName);
@@ -244,15 +280,31 @@ function HospitalPortal() {
   const fetchItemsFn = useServerFn(fetchMedicalItems);
   const fetchServicesFn = useServerFn(fetchMedicalServices);
   const submitClaimFn = useServerFn(submitHospitalClaim);
+  const assignClaimFn = useServerFn(assignClaimToInsurer);
 
-  const { data: branding, isLoading: brandingLoading } = useQuery({
-    queryKey: ["public-branding"],
-    queryFn: () => fetchBrandingFn(),
+  const { data: orgContext, isLoading: orgContextLoading } = useQuery({
+    queryKey: ["hospital-org-context"],
+    queryFn: () => fetchOrgContextFn(),
   });
+  const { data: insurers = [], isLoading: insurersLoading } = useQuery({
+    queryKey: ["insurer-organizations"],
+    queryFn: () => fetchInsurersFn(),
+  });
+  const lockedFacility = orgContext?.facility ?? null;
+  // Only fetch the full facility roster when this account isn't already
+  // linked to one -- most demo hospital accounts are, so this stays unused.
   const { data: facilities = [] } = useQuery({
     queryKey: ["public-health-facilities"],
     queryFn: () => fetchFacilitiesFn(),
+    enabled: !orgContextLoading && !lockedFacility,
   });
+
+  async function handleSignOut() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth/hospital", replace: true });
+  }
   const { data: diagnoses = [], isLoading: diagnosesLoading } = useQuery({
     queryKey: ["public-diagnoses"],
     queryFn: () => fetchDiagnosesFn(),
@@ -313,6 +365,7 @@ function HospitalPortal() {
   }
 
   const [diagnosis, setDiagnosis] = useState<CatalogEntry | null>(null);
+  const [selectedInsurerId, setSelectedInsurerId] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState(today());
   const [explanation, setExplanation] = useState("");
   const [items, setItems] = useState<LineRow[]>([]);
@@ -326,8 +379,14 @@ function HospitalPortal() {
     return sum(items) + sum(services);
   }, [items, services]);
 
-  const facility = facilities.find((f) => f.id === facilityId) ?? null;
-  const canSubmit = !!facility && !!selectedPatient && !!diagnosis && !!dateFrom && !submitting;
+  const facility = lockedFacility ?? facilities.find((f) => f.id === facilityId) ?? null;
+  const canSubmit =
+    !!facility &&
+    !!selectedPatient &&
+    !!diagnosis &&
+    !!selectedInsurerId &&
+    !!dateFrom &&
+    !submitting;
 
   function resetForm() {
     setFacilityId("");
@@ -335,6 +394,7 @@ function HospitalPortal() {
     setChfQuery("");
     setSelectedPatient(null);
     setDiagnosis(null);
+    setSelectedInsurerId(null);
     setDateFrom(today());
     setExplanation("");
     setItems([]);
@@ -342,8 +402,13 @@ function HospitalPortal() {
   }
 
   async function handleSubmit() {
-    if (!facility?.globalId || !selectedPatient?.globalId || !diagnosis?.globalId) {
-      toast.error("Select a facility, patient, and diagnosis before submitting.");
+    if (
+      !facility?.globalId ||
+      !selectedPatient?.globalId ||
+      !diagnosis?.globalId ||
+      !selectedInsurerId
+    ) {
+      toast.error("Select a facility, patient, diagnosis, and insurer before submitting.");
       return;
     }
     setSubmitting(true);
@@ -370,6 +435,15 @@ function HospitalPortal() {
           services: toLine(services),
         },
       });
+      if (result.uuid) {
+        try {
+          await assignClaimFn({
+            data: { claimUuid: result.uuid, insurerOrganizationId: selectedInsurerId },
+          });
+        } catch {
+          toast.warning("Claim submitted, but couldn't tag it to the chosen insurer.");
+        }
+      }
       setConfirmation(result.code);
       resetForm();
     } catch (err) {
@@ -382,19 +456,29 @@ function HospitalPortal() {
   return (
     <div className="min-h-screen bg-[color:var(--brand-cream)]">
       <header className="border-b border-border/40 bg-background px-6 py-6 md:px-10">
-        <div className="mx-auto flex max-w-3xl items-center gap-4">
-          <OrganizationLogo
-            logoUrl={branding?.logoUrl}
-            loading={brandingLoading}
-            className="h-12"
-          />
-          <div>
-            <div className="font-serif text-2xl">
-              {branding?.name ? `${branding.name} ` : ""}
-              <span className="accent-word">Claim Submission</span>
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <OrganizationLogo
+              logoUrl={orgContext?.logoUrl}
+              loading={orgContextLoading}
+              className="h-12"
+            />
+            <div>
+              <div className="font-serif text-2xl">
+                {orgContext?.name ? `${orgContext.name} ` : ""}
+                <span className="accent-word">Claim Submission</span>
+              </div>
+              <p className="text-sm text-muted-foreground">For registered facility staff</p>
             </div>
-            <p className="text-sm text-muted-foreground">For registered facility staff</p>
           </div>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Sign out
+          </button>
         </div>
       </header>
 
@@ -428,18 +512,24 @@ function HospitalPortal() {
             <div className="rounded-3xl bg-background p-7 space-y-6">
               <div>
                 <Label className="text-sm font-medium">Facility</Label>
-                <Select value={facilityId} onValueChange={setFacilityId}>
-                  <SelectTrigger className="mt-1.5">
-                    <SelectValue placeholder="Select your facility" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {facilities.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.name} ({f.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {lockedFacility ? (
+                  <div className="mt-1.5 rounded-md border border-input bg-muted/40 px-3 py-2 text-sm text-foreground">
+                    {lockedFacility.name} ({lockedFacility.code})
+                  </div>
+                ) : (
+                  <Select value={facilityId} onValueChange={setFacilityId}>
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue placeholder="Select your facility" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {facilities.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>
+                          {f.name} ({f.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div>
@@ -506,6 +596,31 @@ function HospitalPortal() {
                     loading={diagnosesLoading}
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Insurance provider</Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Which insurer should review this claim?
+                </p>
+                {insurersLoading ? (
+                  <p className="mt-2 text-sm text-muted-foreground">Loading insurers…</p>
+                ) : insurers.length === 0 ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    No insurance providers are set up yet.
+                  </p>
+                ) : (
+                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {insurers.map((ins) => (
+                      <InsurerCard
+                        key={ins.id}
+                        insurer={ins}
+                        selected={selectedInsurerId === ins.id}
+                        onSelect={() => setSelectedInsurerId(ins.id)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div>
