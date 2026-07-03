@@ -5,6 +5,7 @@ import { graphqlRequest, MAX_PAGE_SIZE } from "./openimis-client.server";
 
 export interface HealthFacility {
   id: string; // openIMIS health facility uuid
+  globalId: string | null; // opaque Relay id -- see decodeGlobalId in openimis-client.server.ts
   code: string;
   name: string;
   level: string | null;
@@ -21,6 +22,7 @@ export interface HealthFacility {
 }
 
 interface HealthFacilityNode {
+  id: string;
   uuid: string;
   code: string;
   name: string;
@@ -36,6 +38,7 @@ interface HealthFacilityNode {
 }
 
 const HEALTH_FACILITY_FIELDS = `
+  id
   uuid
   code
   name
@@ -68,6 +71,7 @@ const CARE_TYPE_LABELS: Record<string, string> = {
 function mapHealthFacility(node: HealthFacilityNode): HealthFacility {
   return {
     id: node.uuid,
+    globalId: node.id ?? null,
     code: node.code,
     name: node.name,
     level: node.level,

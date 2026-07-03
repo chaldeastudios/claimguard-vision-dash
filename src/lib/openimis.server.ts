@@ -1,7 +1,12 @@
 // Claims-specific openIMIS queries. See openimis-client.server.ts for the
 // shared auth/fetch plumbing this builds on.
 
-import { graphqlRequest, MAX_PAGE_SIZE } from "./openimis-client.server";
+import {
+  graphqlRequest,
+  confirmMutation,
+  decodeGlobalId,
+  MAX_PAGE_SIZE,
+} from "./openimis-client.server";
 
 export interface Claim {
   id: string; // openIMIS claim uuid -- the join key claim_risk_analysis.claim_id uses
@@ -302,4 +307,99 @@ export async function getOpenimisClaim(uuid: string): Promise<ClaimDetail | null
   );
   const node = data.claims?.edges?.[0]?.node;
   return node ? mapClaimDetail(node) : null;
+}
+
+export interface SubmitClaimLine {
+  globalId: string; // opaque Relay id of a medicalItems/medicalServices catalog entry
+  quantity: number;
+  priceAsked: number;
+}
+
+export interface SubmitClaimInput {
+  insureeGlobalId: string;
+  healthFacilityGlobalId: string;
+  icdGlobalId: string;
+  dateFrom: string;
+  dateClaimed: string;
+  visitType: string | null;
+  explanation: string | null;
+  items: SubmitClaimLine[];
+  services: SubmitClaimLine[];
+}
+
+// CreateClaimMutationInput isn't independently introspected -- inferred by
+// mirroring the confirmed UpdateClaimMutationInput minus uuid, matching how
+// every other entity in this schema (Family, Insuree, Policy, Premium) pairs
+// its create/update inputs. ClaimCodeInputType turned out to be a plain
+// string scalar despite the name, not a nested object.
+const CREATE_CLAIM_MUTATION = `
+  mutation CreateClaim($input: CreateClaimMutationInput!) {
+    createClaim(input: $input) { clientMutationId }
+  }
+`;
+
+function generateClaimCode(): string {
+  const year = new Date().getFullYear();
+  const rand = Math.floor(10000 + Math.random() * 90000);
+  return `CLM-${year}-${rand}`;
+}
+
+function buildClaimLine(
+  line: SubmitClaimLine,
+  idField: "itemId" | "serviceId",
+): Record<string, unknown> | null {
+  const id = decodeGlobalId(line.globalId);
+  if (id == null) return null;
+  return {
+    [idField]: id,
+    status: 1, // best-effort default -- valid ClaimItem/ClaimService status codes unconfirmed
+    qtyProvided: line.quantity,
+    priceAsked: line.priceAsked,
+  };
+}
+
+// Submits a claim on behalf of a hospital via the public claim portal (see
+// dashboard.hospital-portal.tsx). insureeId/healthFacilityId/icdId/itemId/
+// serviceId are all resolved from opaque Relay ids via decodeGlobalId --
+// UNVERIFIED against this live deployment (see that function's comment). A
+// wrong decode fails the whole mutation with a clear error rather than
+// attaching the claim to the wrong record.
+export async function createOpenimisClaim(input: SubmitClaimInput): Promise<{ code: string }> {
+  const insureeId = decodeGlobalId(input.insureeGlobalId);
+  const healthFacilityId = decodeGlobalId(input.healthFacilityGlobalId);
+  const icdId = decodeGlobalId(input.icdGlobalId);
+  if (insureeId == null || healthFacilityId == null || icdId == null) {
+    throw new Error(
+      "Could not resolve patient, facility, or diagnosis to an openIMIS record id -- the global-id decoding this relies on may not match this deployment.",
+    );
+  }
+
+  const items = input.items
+    .map((line) => buildClaimLine(line, "itemId"))
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+  const services = input.services
+    .map((line) => buildClaimLine(line, "serviceId"))
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
+  const code = generateClaimCode();
+  const clientMutationId = crypto.randomUUID();
+  await graphqlRequest(CREATE_CLAIM_MUTATION, {
+    input: {
+      clientMutationId,
+      code,
+      autogenerate: false,
+      insureeId,
+      healthFacilityId,
+      icdId,
+      dateFrom: input.dateFrom,
+      dateClaimed: input.dateClaimed,
+      visitType: input.visitType,
+      explanation: input.explanation,
+      ...(items.length ? { items } : {}),
+      ...(services.length ? { services } : {}),
+    },
+  });
+  await confirmMutation(clientMutationId);
+
+  return { code };
 }

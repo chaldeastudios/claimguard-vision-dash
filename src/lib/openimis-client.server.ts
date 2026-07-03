@@ -66,6 +66,29 @@ async function getToken(): Promise<string> {
 // instead of clamping.
 export const MAX_PAGE_SIZE = 100;
 
+// Several GQLTypes (Insuree, Family, Product, Location, HealthFacility, ...)
+// expose both `uuid: String!` (what our read queries have used all along)
+// and `id: ID!` -- the latter is graphene-relay's opaque global id, which by
+// its standard, near-universal convention is just base64("TypeName:pk").
+// Mutation inputs like Claim's `insureeId: Int!`/`healthFacilityId: Int!`/
+// `icdId: Int!` want that raw pk, not the uuid -- there is no other way to
+// get it over this API. UNVERIFIED against this live deployment: if
+// openIMIS customized graphene's id encoding this decode will just produce
+// garbage, and the mutation will fail with a clear error rather than
+// silently misattributing a claim to the wrong record (Django will reject
+// a nonexistent/mistyped foreign key).
+export function decodeGlobalId(globalId: string): number | null {
+  try {
+    const decoded = Buffer.from(globalId, "base64").toString("utf-8");
+    const raw = decoded.split(":").pop();
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isInteger(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function graphqlRequest<T>(
   query: string,
   variables?: Record<string, unknown>,

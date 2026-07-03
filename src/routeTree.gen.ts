@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as HospitalPortalRouteImport } from './routes/hospital-portal'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -29,6 +30,11 @@ import { Route as AuthenticatedDashboardHospitalsFacilityIdRouteImport } from '.
 import { Route as AuthenticatedDashboardFamiliesFamilyIdRouteImport } from './routes/_authenticated/dashboard.families.$familyId'
 import { Route as AuthenticatedDashboardClaimsClaimIdRouteImport } from './routes/_authenticated/dashboard.claims.$claimId'
 
+const HospitalPortalRoute = HospitalPortalRouteImport.update({
+  id: '/hospital-portal',
+  path: '/hospital-portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -142,6 +148,7 @@ const AuthenticatedDashboardClaimsClaimIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/hospital-portal': typeof HospitalPortalRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
   '/dashboard/families': typeof AuthenticatedDashboardFamiliesRouteWithChildren
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/hospital-portal': typeof HospitalPortalRoute
   '/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
   '/dashboard/policies': typeof AuthenticatedDashboardPoliciesRouteWithChildren
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
@@ -180,6 +188,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/hospital-portal': typeof HospitalPortalRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
   '/_authenticated/dashboard/families': typeof AuthenticatedDashboardFamiliesRouteWithChildren
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/hospital-portal'
     | '/dashboard'
     | '/dashboard/claims'
     | '/dashboard/families'
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/hospital-portal'
     | '/dashboard/claims'
     | '/dashboard/policies'
     | '/dashboard/settings'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/hospital-portal'
     | '/_authenticated/dashboard'
     | '/_authenticated/dashboard/claims'
     | '/_authenticated/dashboard/families'
@@ -261,10 +273,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  HospitalPortalRoute: typeof HospitalPortalRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/hospital-portal': {
+      id: '/hospital-portal'
+      path: '/hospital-portal'
+      fullPath: '/hospital-portal'
+      preLoaderRoute: typeof HospitalPortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -531,6 +551,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  HospitalPortalRoute: HospitalPortalRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -15,6 +15,7 @@ export interface Family {
 
 export interface Insuree {
   id: string; // openIMIS insuree uuid
+  globalId: string | null; // opaque Relay id -- see decodeGlobalId in openimis-client.server.ts
   chfId: string;
   name: string;
   lastName: string;
@@ -38,6 +39,7 @@ interface FamilyNode {
 }
 
 interface InsureeNode {
+  id: string;
   uuid: string;
   chfId: string;
   lastName: string;
@@ -61,6 +63,7 @@ const FAMILY_FIELDS = `
 `;
 
 const INSUREE_FIELDS = `
+  id
   uuid
   chfId
   lastName
@@ -92,6 +95,7 @@ function mapFamily(node: FamilyNode): Family {
 function mapInsuree(node: InsureeNode): Insuree {
   return {
     id: node.uuid,
+    globalId: node.id ?? null,
     chfId: node.chfId,
     name: [node.otherNames, node.lastName].filter(Boolean).join(" ").trim() || "Unknown",
     lastName: node.lastName,
@@ -160,6 +164,28 @@ export async function getOpenimisInsurees(): Promise<Insuree[]> {
   `;
   const data = await graphqlRequest<{ insurees: { edges: { node: InsureeNode }[] } }>(query, {
     first: MAX_PAGE_SIZE,
+  });
+  return (data.insurees?.edges ?? []).map((e) => mapInsuree(e.node));
+}
+
+// Server-side filtered lookup for the public hospital claim portal --
+// returns only matches for the entered CHF ID prefix rather than shipping
+// the full insuree roster (with names/DOB/phone/email) to an unauthenticated
+// client. chfId_Icontains follows the same _Icontains filter convention
+// already confirmed on other root fields in this schema (enrolmentOfficers'
+// lastName_Icontains, code_Icontains).
+export async function searchOpenimisInsureesByChfId(chfId: string): Promise<Insuree[]> {
+  if (!chfId.trim()) return [];
+  const query = `
+    query InsureesByChfId($chfId: String!, $first: Int) {
+      insurees(chfId_Icontains: $chfId, first: $first) {
+        edges { node { ${INSUREE_FIELDS} } }
+      }
+    }
+  `;
+  const data = await graphqlRequest<{ insurees: { edges: { node: InsureeNode }[] } }>(query, {
+    chfId,
+    first: 5,
   });
   return (data.insurees?.edges ?? []).map((e) => mapInsuree(e.node));
 }
