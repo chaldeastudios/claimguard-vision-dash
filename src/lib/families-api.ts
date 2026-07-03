@@ -6,8 +6,11 @@ import {
   getOpenimisFamily,
   getOpenimisFamilyMembers,
   getOpenimisInsuree,
+  getOpenimisInsurees,
   updateOpenimisInsuree,
   updateOpenimisFamily,
+  createOpenimisInsuree,
+  createOpenimisFamily,
   type Family,
   type Insuree,
 } from "./insuree.server";
@@ -17,6 +20,10 @@ export type { Family, Insuree };
 export const fetchFamilies = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async (): Promise<Family[]> => getOpenimisFamilies());
+
+export const fetchInsurees = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<Insuree[]> => getOpenimisInsurees());
 
 const FamilyIdInput = z.object({ familyId: z.string().min(1) });
 
@@ -66,3 +73,31 @@ export const updateFamily = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => UpdateFamilyInput.parse(data))
   .handler(async ({ data }): Promise<void> => updateOpenimisFamily(data));
+
+const CreateInsureeInput = z.object({
+  chfId: z.string().min(1),
+  lastName: z.string().min(1),
+  otherNames: z.string().min(1),
+  gender: z.enum(["M", "F"]),
+  dob: z.string().min(1),
+  head: z.boolean(),
+  phone: z.string().nullable(),
+  email: z.string().nullable(),
+  currentAddress: z.string().nullable(),
+});
+
+export const createInsuree = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => CreateInsureeInput.parse(data))
+  .handler(async ({ data }): Promise<void> => createOpenimisInsuree(data));
+
+const CreateFamilyInput = z.object({
+  address: z.string().nullable(),
+  poverty: z.boolean(),
+  confirmationNo: z.string().nullable(),
+});
+
+export const createFamily = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => CreateFamilyInput.parse(data))
+  .handler(async ({ data }): Promise<void> => createOpenimisFamily(data));

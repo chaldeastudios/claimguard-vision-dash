@@ -13,6 +13,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 const nav: Array<{ to: string; label: string; end?: boolean }> = [
   { to: "/dashboard", label: "Dashboard", end: true },
   { to: "/dashboard/families", label: "Families" },
+  { to: "/dashboard/insurees", label: "Insurees" },
   { to: "/dashboard/hospitals", label: "Hospitals" },
 ];
 

@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchFamilies } from "@/lib/families-api";
+import { FamilyCreateDialog } from "@/components/family-create-dialog";
 import { Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/families/")({
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/_authenticated/dashboard/families/")({
 });
 
 function FamiliesList() {
+  const qc = useQueryClient();
   const fetchFamiliesFn = useServerFn(fetchFamilies);
   const {
     data: families = [],
@@ -38,13 +40,16 @@ function FamiliesList() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-4xl">
-          Families <span className="accent-word">& Households</span>
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          {isLoading ? "Loading…" : `${rows.length} families`}
-        </p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-4xl">
+            Families <span className="accent-word">& Households</span>
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            {isLoading ? "Loading…" : `${rows.length} families`}
+          </p>
+        </div>
+        <FamilyCreateDialog onCreated={() => qc.invalidateQueries({ queryKey: ["families"] })} />
       </div>
 
       {isError && (

@@ -5,6 +5,8 @@ import {
   getOpenimisPolicy,
   getOpenimisPoliciesByFamily,
   getOpenimisPremiumsByPolicy,
+  createOpenimisPremium,
+  updateOpenimisPremium,
   type Policy,
   type Premium,
 } from "./policy.server";
@@ -29,3 +31,23 @@ export const fetchPremiumsByPolicy = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => PolicyIdInput.parse(data))
   .handler(async ({ data }): Promise<Premium[]> => getOpenimisPremiumsByPolicy(data.policyId));
+
+const CreatePremiumInput = z.object({
+  policyUuid: z.string().min(1),
+  amount: z.number().positive(),
+  receipt: z.string().nullable(),
+  payDate: z.string().nullable(),
+  payType: z.string().nullable(),
+});
+
+export const createPremium = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => CreatePremiumInput.parse(data))
+  .handler(async ({ data }): Promise<void> => createOpenimisPremium(data));
+
+const UpdatePremiumInput = CreatePremiumInput.extend({ uuid: z.string().min(1) });
+
+export const updatePremium = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => UpdatePremiumInput.parse(data))
+  .handler(async ({ data }): Promise<void> => updateOpenimisPremium(data));

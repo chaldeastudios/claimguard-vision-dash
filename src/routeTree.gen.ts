@@ -20,9 +20,12 @@ import { Route as AuthenticatedDashboardInsureesRouteImport } from './routes/_au
 import { Route as AuthenticatedDashboardHospitalsRouteImport } from './routes/_authenticated/dashboard.hospitals'
 import { Route as AuthenticatedDashboardFamiliesRouteImport } from './routes/_authenticated/dashboard.families'
 import { Route as AuthenticatedDashboardClaimsRouteImport } from './routes/_authenticated/dashboard.claims'
+import { Route as AuthenticatedDashboardInsureesIndexRouteImport } from './routes/_authenticated/dashboard.insurees.index'
+import { Route as AuthenticatedDashboardHospitalsIndexRouteImport } from './routes/_authenticated/dashboard.hospitals.index'
 import { Route as AuthenticatedDashboardFamiliesIndexRouteImport } from './routes/_authenticated/dashboard.families.index'
 import { Route as AuthenticatedDashboardPoliciesPolicyIdRouteImport } from './routes/_authenticated/dashboard.policies.$policyId'
 import { Route as AuthenticatedDashboardInsureesInsureeIdRouteImport } from './routes/_authenticated/dashboard.insurees.$insureeId'
+import { Route as AuthenticatedDashboardHospitalsFacilityIdRouteImport } from './routes/_authenticated/dashboard.hospitals.$facilityId'
 import { Route as AuthenticatedDashboardFamiliesFamilyIdRouteImport } from './routes/_authenticated/dashboard.families.$familyId'
 import { Route as AuthenticatedDashboardClaimsClaimIdRouteImport } from './routes/_authenticated/dashboard.claims.$claimId'
 
@@ -87,6 +90,18 @@ const AuthenticatedDashboardClaimsRoute =
     path: '/claims',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardInsureesIndexRoute =
+  AuthenticatedDashboardInsureesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedDashboardInsureesRoute,
+  } as any)
+const AuthenticatedDashboardHospitalsIndexRoute =
+  AuthenticatedDashboardHospitalsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedDashboardHospitalsRoute,
+  } as any)
 const AuthenticatedDashboardFamiliesIndexRoute =
   AuthenticatedDashboardFamiliesIndexRouteImport.update({
     id: '/',
@@ -104,6 +119,12 @@ const AuthenticatedDashboardInsureesInsureeIdRoute =
     id: '/$insureeId',
     path: '/$insureeId',
     getParentRoute: () => AuthenticatedDashboardInsureesRoute,
+  } as any)
+const AuthenticatedDashboardHospitalsFacilityIdRoute =
+  AuthenticatedDashboardHospitalsFacilityIdRouteImport.update({
+    id: '/$facilityId',
+    path: '/$facilityId',
+    getParentRoute: () => AuthenticatedDashboardHospitalsRoute,
   } as any)
 const AuthenticatedDashboardFamiliesFamilyIdRoute =
   AuthenticatedDashboardFamiliesFamilyIdRouteImport.update({
@@ -124,31 +145,35 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
   '/dashboard/families': typeof AuthenticatedDashboardFamiliesRouteWithChildren
-  '/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRoute
+  '/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRouteWithChildren
   '/dashboard/insurees': typeof AuthenticatedDashboardInsureesRouteWithChildren
   '/dashboard/policies': typeof AuthenticatedDashboardPoliciesRouteWithChildren
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/claims/$claimId': typeof AuthenticatedDashboardClaimsClaimIdRoute
   '/dashboard/families/$familyId': typeof AuthenticatedDashboardFamiliesFamilyIdRoute
+  '/dashboard/hospitals/$facilityId': typeof AuthenticatedDashboardHospitalsFacilityIdRoute
   '/dashboard/insurees/$insureeId': typeof AuthenticatedDashboardInsureesInsureeIdRoute
   '/dashboard/policies/$policyId': typeof AuthenticatedDashboardPoliciesPolicyIdRoute
   '/dashboard/families/': typeof AuthenticatedDashboardFamiliesIndexRoute
+  '/dashboard/hospitals/': typeof AuthenticatedDashboardHospitalsIndexRoute
+  '/dashboard/insurees/': typeof AuthenticatedDashboardInsureesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
-  '/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRoute
-  '/dashboard/insurees': typeof AuthenticatedDashboardInsureesRouteWithChildren
   '/dashboard/policies': typeof AuthenticatedDashboardPoliciesRouteWithChildren
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/dashboard/claims/$claimId': typeof AuthenticatedDashboardClaimsClaimIdRoute
   '/dashboard/families/$familyId': typeof AuthenticatedDashboardFamiliesFamilyIdRoute
+  '/dashboard/hospitals/$facilityId': typeof AuthenticatedDashboardHospitalsFacilityIdRoute
   '/dashboard/insurees/$insureeId': typeof AuthenticatedDashboardInsureesInsureeIdRoute
   '/dashboard/policies/$policyId': typeof AuthenticatedDashboardPoliciesPolicyIdRoute
   '/dashboard/families': typeof AuthenticatedDashboardFamiliesIndexRoute
+  '/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsIndexRoute
+  '/dashboard/insurees': typeof AuthenticatedDashboardInsureesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -158,16 +183,19 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
   '/_authenticated/dashboard/families': typeof AuthenticatedDashboardFamiliesRouteWithChildren
-  '/_authenticated/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRoute
+  '/_authenticated/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRouteWithChildren
   '/_authenticated/dashboard/insurees': typeof AuthenticatedDashboardInsureesRouteWithChildren
   '/_authenticated/dashboard/policies': typeof AuthenticatedDashboardPoliciesRouteWithChildren
   '/_authenticated/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/dashboard/claims/$claimId': typeof AuthenticatedDashboardClaimsClaimIdRoute
   '/_authenticated/dashboard/families/$familyId': typeof AuthenticatedDashboardFamiliesFamilyIdRoute
+  '/_authenticated/dashboard/hospitals/$facilityId': typeof AuthenticatedDashboardHospitalsFacilityIdRoute
   '/_authenticated/dashboard/insurees/$insureeId': typeof AuthenticatedDashboardInsureesInsureeIdRoute
   '/_authenticated/dashboard/policies/$policyId': typeof AuthenticatedDashboardPoliciesPolicyIdRoute
   '/_authenticated/dashboard/families/': typeof AuthenticatedDashboardFamiliesIndexRoute
+  '/_authenticated/dashboard/hospitals/': typeof AuthenticatedDashboardHospitalsIndexRoute
+  '/_authenticated/dashboard/insurees/': typeof AuthenticatedDashboardInsureesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -184,24 +212,28 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/dashboard/claims/$claimId'
     | '/dashboard/families/$familyId'
+    | '/dashboard/hospitals/$facilityId'
     | '/dashboard/insurees/$insureeId'
     | '/dashboard/policies/$policyId'
     | '/dashboard/families/'
+    | '/dashboard/hospitals/'
+    | '/dashboard/insurees/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/dashboard/claims'
-    | '/dashboard/hospitals'
-    | '/dashboard/insurees'
     | '/dashboard/policies'
     | '/dashboard/settings'
     | '/dashboard'
     | '/dashboard/claims/$claimId'
     | '/dashboard/families/$familyId'
+    | '/dashboard/hospitals/$facilityId'
     | '/dashboard/insurees/$insureeId'
     | '/dashboard/policies/$policyId'
     | '/dashboard/families'
+    | '/dashboard/hospitals'
+    | '/dashboard/insurees'
   id:
     | '__root__'
     | '/'
@@ -217,9 +249,12 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/'
     | '/_authenticated/dashboard/claims/$claimId'
     | '/_authenticated/dashboard/families/$familyId'
+    | '/_authenticated/dashboard/hospitals/$facilityId'
     | '/_authenticated/dashboard/insurees/$insureeId'
     | '/_authenticated/dashboard/policies/$policyId'
     | '/_authenticated/dashboard/families/'
+    | '/_authenticated/dashboard/hospitals/'
+    | '/_authenticated/dashboard/insurees/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -307,6 +342,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardClaimsRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/insurees/': {
+      id: '/_authenticated/dashboard/insurees/'
+      path: '/'
+      fullPath: '/dashboard/insurees/'
+      preLoaderRoute: typeof AuthenticatedDashboardInsureesIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardInsureesRoute
+    }
+    '/_authenticated/dashboard/hospitals/': {
+      id: '/_authenticated/dashboard/hospitals/'
+      path: '/'
+      fullPath: '/dashboard/hospitals/'
+      preLoaderRoute: typeof AuthenticatedDashboardHospitalsIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardHospitalsRoute
+    }
     '/_authenticated/dashboard/families/': {
       id: '/_authenticated/dashboard/families/'
       path: '/'
@@ -327,6 +376,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/insurees/$insureeId'
       preLoaderRoute: typeof AuthenticatedDashboardInsureesInsureeIdRouteImport
       parentRoute: typeof AuthenticatedDashboardInsureesRoute
+    }
+    '/_authenticated/dashboard/hospitals/$facilityId': {
+      id: '/_authenticated/dashboard/hospitals/$facilityId'
+      path: '/$facilityId'
+      fullPath: '/dashboard/hospitals/$facilityId'
+      preLoaderRoute: typeof AuthenticatedDashboardHospitalsFacilityIdRouteImport
+      parentRoute: typeof AuthenticatedDashboardHospitalsRoute
     }
     '/_authenticated/dashboard/families/$familyId': {
       id: '/_authenticated/dashboard/families/$familyId'
@@ -378,14 +434,35 @@ const AuthenticatedDashboardFamiliesRouteWithChildren =
     AuthenticatedDashboardFamiliesRouteChildren,
   )
 
+interface AuthenticatedDashboardHospitalsRouteChildren {
+  AuthenticatedDashboardHospitalsFacilityIdRoute: typeof AuthenticatedDashboardHospitalsFacilityIdRoute
+  AuthenticatedDashboardHospitalsIndexRoute: typeof AuthenticatedDashboardHospitalsIndexRoute
+}
+
+const AuthenticatedDashboardHospitalsRouteChildren: AuthenticatedDashboardHospitalsRouteChildren =
+  {
+    AuthenticatedDashboardHospitalsFacilityIdRoute:
+      AuthenticatedDashboardHospitalsFacilityIdRoute,
+    AuthenticatedDashboardHospitalsIndexRoute:
+      AuthenticatedDashboardHospitalsIndexRoute,
+  }
+
+const AuthenticatedDashboardHospitalsRouteWithChildren =
+  AuthenticatedDashboardHospitalsRoute._addFileChildren(
+    AuthenticatedDashboardHospitalsRouteChildren,
+  )
+
 interface AuthenticatedDashboardInsureesRouteChildren {
   AuthenticatedDashboardInsureesInsureeIdRoute: typeof AuthenticatedDashboardInsureesInsureeIdRoute
+  AuthenticatedDashboardInsureesIndexRoute: typeof AuthenticatedDashboardInsureesIndexRoute
 }
 
 const AuthenticatedDashboardInsureesRouteChildren: AuthenticatedDashboardInsureesRouteChildren =
   {
     AuthenticatedDashboardInsureesInsureeIdRoute:
       AuthenticatedDashboardInsureesInsureeIdRoute,
+    AuthenticatedDashboardInsureesIndexRoute:
+      AuthenticatedDashboardInsureesIndexRoute,
   }
 
 const AuthenticatedDashboardInsureesRouteWithChildren =
@@ -411,7 +488,7 @@ const AuthenticatedDashboardPoliciesRouteWithChildren =
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardClaimsRoute: typeof AuthenticatedDashboardClaimsRouteWithChildren
   AuthenticatedDashboardFamiliesRoute: typeof AuthenticatedDashboardFamiliesRouteWithChildren
-  AuthenticatedDashboardHospitalsRoute: typeof AuthenticatedDashboardHospitalsRoute
+  AuthenticatedDashboardHospitalsRoute: typeof AuthenticatedDashboardHospitalsRouteWithChildren
   AuthenticatedDashboardInsureesRoute: typeof AuthenticatedDashboardInsureesRouteWithChildren
   AuthenticatedDashboardPoliciesRoute: typeof AuthenticatedDashboardPoliciesRouteWithChildren
   AuthenticatedDashboardSettingsRoute: typeof AuthenticatedDashboardSettingsRoute
@@ -424,7 +501,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
       AuthenticatedDashboardClaimsRouteWithChildren,
     AuthenticatedDashboardFamiliesRoute:
       AuthenticatedDashboardFamiliesRouteWithChildren,
-    AuthenticatedDashboardHospitalsRoute: AuthenticatedDashboardHospitalsRoute,
+    AuthenticatedDashboardHospitalsRoute:
+      AuthenticatedDashboardHospitalsRouteWithChildren,
     AuthenticatedDashboardInsureesRoute:
       AuthenticatedDashboardInsureesRouteWithChildren,
     AuthenticatedDashboardPoliciesRoute:

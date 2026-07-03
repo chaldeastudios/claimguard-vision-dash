@@ -1,8 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchPolicy, fetchPremiumsByPolicy } from "@/lib/policy-api";
 import { fmtKES } from "@/lib/claims-api";
+import { PremiumDialog } from "@/components/premium-dialog";
 import { ArrowLeft, ShieldCheck, Wallet } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/policies/$policyId")({
@@ -24,6 +25,7 @@ const STATUS_TONE: Record<string, string> = {
 
 function PolicyDetail() {
   const { policyId } = Route.useParams();
+  const qc = useQueryClient();
   const fetchPolicyFn = useServerFn(fetchPolicy);
   const fetchPremiumsByPolicyFn = useServerFn(fetchPremiumsByPolicy);
 
@@ -93,10 +95,16 @@ function PolicyDetail() {
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <div className="space-y-6">
           <div className="rounded-3xl bg-[color:var(--brand-cream)] p-7">
-            <h2 className="flex items-center gap-2 font-serif text-xl">
-              <Wallet className="h-4 w-4 text-[color:var(--brand-orange)]" />
-              Contribution history
-            </h2>
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="flex items-center gap-2 font-serif text-xl">
+                <Wallet className="h-4 w-4 text-[color:var(--brand-orange)]" />
+                Contribution history
+              </h2>
+              <PremiumDialog
+                policyUuid={policy.id}
+                onSaved={() => qc.invalidateQueries({ queryKey: ["policy-premiums", policyId] })}
+              />
+            </div>
             <div className="mt-5 overflow-hidden rounded-2xl bg-background/60">
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -106,6 +114,7 @@ function PolicyDetail() {
                     <th className="px-4 py-3">Type</th>
                     <th className="px-4 py-3">Paid</th>
                     <th className="px-4 py-3">Receipt</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -116,12 +125,21 @@ function PolicyDetail() {
                       <td className="px-4 py-3 text-muted-foreground">{p.payType ?? "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{p.payDate ?? "—"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{p.receipt ?? "—"}</td>
+                      <td className="px-4 py-3 text-right">
+                        <PremiumDialog
+                          policyUuid={policy.id}
+                          premium={p}
+                          onSaved={() =>
+                            qc.invalidateQueries({ queryKey: ["policy-premiums", policyId] })
+                          }
+                        />
+                      </td>
                     </tr>
                   ))}
                   {premiums.length === 0 && (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className="px-4 py-8 text-center text-sm text-muted-foreground"
                       >
                         {premiumsLoading ? "Loading contributions…" : "No contributions recorded."}

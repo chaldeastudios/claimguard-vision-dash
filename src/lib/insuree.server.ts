@@ -192,6 +192,8 @@ export interface UpdateInsureeInput {
   currentAddress: string | null;
 }
 
+export type CreateInsureeInput = Omit<UpdateInsureeInput, "uuid">;
+
 // UpdateInsureeMutationInput requires the full record (lastName/otherNames/
 // genderId/dob), not a partial patch -- openIMIS's InsureeService applies
 // each field it's given via setattr, so fields we simply omit here
@@ -202,12 +204,24 @@ const UPDATE_INSUREE_MUTATION = `
   }
 `;
 
+// CreateInsureeMutationInput's familyId is optional -- omitting it creates
+// a standalone insuree not attached to any household. Attaching to a
+// specific family needs that family's raw integer id, which our reads only
+// expose as a uuid -- not wired up here yet.
+const CREATE_INSUREE_MUTATION = `
+  mutation CreateInsuree($input: CreateInsureeMutationInput!) {
+    createInsuree(input: $input) { clientMutationId }
+  }
+`;
+
 export interface UpdateFamilyInput {
   uuid: string;
   address: string | null;
   poverty: boolean;
   confirmationNo: string | null;
 }
+
+export type CreateFamilyInput = Omit<UpdateFamilyInput, "uuid">;
 
 // UpdateFamilyMutationInput has no required fields beyond the id -- omitting
 // locationId/headInsuree keeps this out of integer-id/nested-type territory
@@ -216,6 +230,16 @@ export interface UpdateFamilyInput {
 const UPDATE_FAMILY_MUTATION = `
   mutation UpdateFamily($input: UpdateFamilyMutationInput!) {
     updateFamily(input: $input) { clientMutationId }
+  }
+`;
+
+// CreateFamilyMutationInput has the same field set, also with nothing
+// required per the schema -- but a family with no location/head insuree may
+// still get rejected by openIMIS's own business validation. If so,
+// confirmMutation surfaces that as a real error instead of a silent no-op.
+const CREATE_FAMILY_MUTATION = `
+  mutation CreateFamily($input: CreateFamilyMutationInput!) {
+    createFamily(input: $input) { clientMutationId }
   }
 `;
 
@@ -233,12 +257,44 @@ export async function updateOpenimisFamily(input: UpdateFamilyInput): Promise<vo
   await confirmMutation(clientMutationId);
 }
 
+export async function createOpenimisFamily(input: CreateFamilyInput): Promise<void> {
+  const clientMutationId = crypto.randomUUID();
+  await graphqlRequest(CREATE_FAMILY_MUTATION, {
+    input: {
+      clientMutationId,
+      address: input.address,
+      poverty: input.poverty,
+      confirmationNo: input.confirmationNo,
+    },
+  });
+  await confirmMutation(clientMutationId);
+}
+
 export async function updateOpenimisInsuree(input: UpdateInsureeInput): Promise<void> {
   const clientMutationId = crypto.randomUUID();
   await graphqlRequest(UPDATE_INSUREE_MUTATION, {
     input: {
       clientMutationId,
       uuid: input.uuid,
+      chfId: input.chfId,
+      lastName: input.lastName,
+      otherNames: input.otherNames,
+      genderId: input.gender,
+      dob: input.dob,
+      head: input.head,
+      phone: input.phone,
+      email: input.email,
+      currentAddress: input.currentAddress,
+    },
+  });
+  await confirmMutation(clientMutationId);
+}
+
+export async function createOpenimisInsuree(input: CreateInsureeInput): Promise<void> {
+  const clientMutationId = crypto.randomUUID();
+  await graphqlRequest(CREATE_INSUREE_MUTATION, {
+    input: {
+      clientMutationId,
       chfId: input.chfId,
       lastName: input.lastName,
       otherNames: input.otherNames,

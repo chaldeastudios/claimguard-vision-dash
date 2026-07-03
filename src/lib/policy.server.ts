@@ -1,7 +1,7 @@
 // Policy/Premium-specific openIMIS queries. See openimis-client.server.ts
 // for the shared auth/fetch plumbing this builds on.
 
-import { graphqlRequest, MAX_PAGE_SIZE } from "./openimis-client.server";
+import { graphqlRequest, confirmMutation, MAX_PAGE_SIZE } from "./openimis-client.server";
 
 export interface Policy {
   id: string; // openIMIS policy uuid
@@ -158,4 +158,62 @@ export async function getOpenimisPremiumsByPolicy(policyUuid: string): Promise<P
     first: MAX_PAGE_SIZE,
   });
   return (data.premiums?.edges ?? []).map((e) => mapPremium(e.node));
+}
+
+export interface UpdatePremiumInput {
+  uuid: string;
+  policyUuid: string;
+  amount: number;
+  receipt: string | null;
+  payDate: string | null;
+  payType: string | null;
+}
+
+export type CreatePremiumInput = Omit<UpdatePremiumInput, "uuid">;
+
+// Unlike Policy (productId/familyId/officerId: Int!), Premium/Contribution
+// needs no integer ids at all -- policyUuid is a plain string and we
+// already have it from the read side, so create+update are both fully
+// buildable without further introspection.
+const CREATE_PREMIUM_MUTATION = `
+  mutation CreatePremium($input: CreatePremiumMutationInput!) {
+    createPremium(input: $input) { clientMutationId }
+  }
+`;
+
+const UPDATE_PREMIUM_MUTATION = `
+  mutation UpdatePremium($input: UpdatePremiumMutationInput!) {
+    updatePremium(input: $input) { clientMutationId }
+  }
+`;
+
+export async function createOpenimisPremium(input: CreatePremiumInput): Promise<void> {
+  const clientMutationId = crypto.randomUUID();
+  await graphqlRequest(CREATE_PREMIUM_MUTATION, {
+    input: {
+      clientMutationId,
+      policyUuid: input.policyUuid,
+      amount: input.amount,
+      receipt: input.receipt,
+      payDate: input.payDate,
+      payType: input.payType,
+    },
+  });
+  await confirmMutation(clientMutationId);
+}
+
+export async function updateOpenimisPremium(input: UpdatePremiumInput): Promise<void> {
+  const clientMutationId = crypto.randomUUID();
+  await graphqlRequest(UPDATE_PREMIUM_MUTATION, {
+    input: {
+      clientMutationId,
+      uuid: input.uuid,
+      policyUuid: input.policyUuid,
+      amount: input.amount,
+      receipt: input.receipt,
+      payDate: input.payDate,
+      payType: input.payType,
+    },
+  });
+  await confirmMutation(clientMutationId);
 }
