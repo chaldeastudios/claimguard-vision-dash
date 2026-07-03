@@ -114,6 +114,28 @@
   --sidebar-ring: oklch(0.68 0.21 38);
 }
 
+/* Institution branding overrides (src/lib/institutions.ts) -- demo-a matches
+   the :root defaults above, so only demo-b/demo-c need overrides here. All
+   three institutions read/write the same openIMIS backend; this is a
+   presentation-layer switch only. */
+:root[data-institution="demo-b"] {
+  --brand-brown: oklch(0.5 0.05 210);
+  --brand-brown-foreground: oklch(0.99 0.005 90);
+  --brand-orange: oklch(0.65 0.16 195);
+  --ring: oklch(0.5 0.05 210);
+  --sidebar-primary: oklch(0.65 0.16 195);
+  --sidebar-ring: oklch(0.65 0.16 195);
+}
+
+:root[data-institution="demo-c"] {
+  --brand-brown: oklch(0.5 0.06 320);
+  --brand-brown-foreground: oklch(0.99 0.005 90);
+  --brand-orange: oklch(0.66 0.19 305);
+  --ring: oklch(0.5 0.06 320);
+  --sidebar-primary: oklch(0.66 0.19 305);
+  --sidebar-ring: oklch(0.66 0.19 305);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);

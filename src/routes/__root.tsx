@@ -80,7 +80,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "AI-powered claims fraud detection for national health insurance schemes.",
       },
       { name: "author", content: "ClaimGuard" },
-      { property: "og:title", content: "ClaimGuard — Fraud detection for health insurance schemes" },
+      {
+        property: "og:title",
+        content: "ClaimGuard — Fraud detection for health insurance schemes",
+      },
       {
         property: "og:description",
         content: "AI-powered claims fraud detection for national health insurance schemes.",
@@ -101,11 +104,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+// Sets the institution branding attribute before first paint, same pattern
+// as a dark-mode init script -- without this, the page would flash the
+// default institution's colors before React hydrates and applies the
+// stored selection (see src/lib/institutions.ts).
+const INSTITUTION_INIT_SCRIPT = `
+try {
+  var id = window.localStorage.getItem("institution-id");
+  if (id) document.documentElement.dataset.institution = id;
+} catch (e) {}
+`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: INSTITUTION_INIT_SCRIPT }} />
       </head>
       <body>
         {children}

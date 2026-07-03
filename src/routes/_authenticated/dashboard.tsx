@@ -4,6 +4,7 @@ import { LogoMark } from "@/components/brand/icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, Settings as SettingsIcon, Bell } from "lucide-react";
+import { institutions, getStoredInstitutionId, setInstitution } from "@/lib/institutions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "ClaimGuard — Reviewer Dashboard" }] }),
@@ -26,6 +27,7 @@ function DashboardLayout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [user, setUser] = useState<{ name: string | null; email: string | null } | null>(null);
+  const [institutionId, setInstitutionId] = useState(institutions[0].id);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -36,6 +38,15 @@ function DashboardLayout() {
       setUser({ name, email: u.email ?? null });
     });
   }, []);
+
+  useEffect(() => {
+    setInstitutionId(getStoredInstitutionId());
+  }, []);
+
+  function handleInstitutionChange(id: string) {
+    setInstitutionId(id);
+    setInstitution(id);
+  }
 
   const isActive = (to: string, end?: boolean) =>
     end ? pathname === to : pathname === to || pathname.startsWith(to + "/");
@@ -58,6 +69,18 @@ function DashboardLayout() {
           <Link to="/" className="flex items-center text-[color:var(--brand-brown)]">
             <LogoMark className="h-7 w-auto" />
           </Link>
+          <select
+            value={institutionId}
+            onChange={(e) => handleInstitutionChange(e.target.value)}
+            aria-label="Institution"
+            className="hidden rounded-full bg-[color:var(--brand-cream)] px-3.5 py-2 text-sm font-medium text-foreground md:inline-flex"
+          >
+            {institutions.map((inst) => (
+              <option key={inst.id} value={inst.id}>
+                {inst.shortName}
+              </option>
+            ))}
+          </select>
           <nav className="hidden items-center gap-1 md:flex">
             {nav.map(({ to, label, end }) => (
               <Link
