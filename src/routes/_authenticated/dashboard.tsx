@@ -1,15 +1,9 @@
 import { Outlet, createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { InstitutionLogo } from "@/components/brand/institution-logo";
+import { OrganizationLogo } from "@/components/brand/organization-logo";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LogOut, Settings as SettingsIcon, Bell } from "lucide-react";
-import {
-  institutions,
-  getInstitution,
-  getStoredInstitutionId,
-  setInstitution,
-} from "@/lib/institutions";
+import { CURRENT_PROFILE_QUERY_KEY, fetchCurrentProfile } from "@/lib/current-profile";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "ClaimGuard — Reviewer Dashboard" }] }),
@@ -32,27 +26,10 @@ function DashboardLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [user, setUser] = useState<{ name: string | null; email: string | null } | null>(null);
-  const [institutionId, setInstitutionId] = useState(institutions[0].id);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const u = data.user;
-      if (!u) return;
-      const name =
-        (u.user_metadata?.full_name as string) || (u.user_metadata?.name as string) || null;
-      setUser({ name, email: u.email ?? null });
-    });
-  }, []);
-
-  useEffect(() => {
-    setInstitutionId(getStoredInstitutionId());
-  }, []);
-
-  function handleInstitutionChange(id: string) {
-    setInstitutionId(id);
-    setInstitution(id);
-  }
+  const { data: profile } = useQuery({
+    queryKey: CURRENT_PROFILE_QUERY_KEY,
+    queryFn: fetchCurrentProfile,
+  });
 
   const isActive = (to: string, end?: boolean) =>
     end ? pathname === to : pathname === to || pathname.startsWith(to + "/");
@@ -65,28 +42,16 @@ function DashboardLayout() {
     navigate({ to: "/auth", replace: true });
   }
 
-  const displayName = user?.name || user?.email || "Reviewer";
-  const initials = initialsOf(user?.name, user?.email);
+  const displayName = profile?.name || profile?.email || "Reviewer";
+  const initials = initialsOf(profile?.name, profile?.email);
 
   return (
     <div className="min-h-screen w-full bg-background">
       <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-border bg-background px-6 py-4 md:px-10">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center">
-            <InstitutionLogo institution={getInstitution(institutionId)} className="h-8 w-8" />
+            <OrganizationLogo logoUrl={profile?.logoUrl} className="h-9" />
           </Link>
-          <select
-            value={institutionId}
-            onChange={(e) => handleInstitutionChange(e.target.value)}
-            aria-label="Institution"
-            className="hidden rounded-full bg-[color:var(--brand-cream)] px-3.5 py-2 text-sm font-medium text-foreground md:inline-flex"
-          >
-            {institutions.map((inst) => (
-              <option key={inst.id} value={inst.id}>
-                {inst.shortName}
-              </option>
-            ))}
-          </select>
           <nav className="hidden items-center gap-1 md:flex">
             {nav.map(({ to, label, end }) => (
               <Link
@@ -126,7 +91,7 @@ function DashboardLayout() {
           </Link>
           <div className="hidden flex-col items-end text-right md:flex">
             <span className="text-xs font-medium text-foreground">{displayName}</span>
-            <span className="text-[10px] text-muted-foreground">{user?.email ?? "—"}</span>
+            <span className="text-[10px] text-muted-foreground">{profile?.email ?? "—"}</span>
           </div>
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--brand-brown)] text-sm font-medium text-[color:var(--brand-brown-foreground)]">
             {initials}

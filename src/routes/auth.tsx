@@ -1,14 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { InstitutionLogo } from "@/components/brand/institution-logo";
+import { LogoMark } from "@/components/brand/icons";
 import { toast } from "sonner";
-import {
-  institutions,
-  getInstitution,
-  getStoredInstitutionId,
-  setInstitution,
-} from "@/lib/institutions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — ClaimGuard" }] }),
@@ -22,16 +16,6 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [institutionId, setInstitutionId] = useState(institutions[0].id);
-
-  useEffect(() => {
-    setInstitutionId(getStoredInstitutionId());
-  }, []);
-
-  function handleInstitutionChange(id: string) {
-    setInstitutionId(id);
-    setInstitution(id);
-  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -71,7 +55,7 @@ function AuthPage() {
     <div className="flex min-h-screen bg-[color:var(--brand-cream)]">
       <div className="hidden flex-1 flex-col justify-between bg-[color:var(--sidebar)] p-12 text-white lg:flex">
         <Link to="/">
-          <InstitutionLogo institution={getInstitution(institutionId)} className="h-10 w-10" />
+          <LogoMark className="h-9 w-auto text-[color:var(--brand-orange)]" />
         </Link>
         <div className="max-w-md space-y-6">
           <h1 className="font-serif text-4xl leading-tight">
@@ -86,22 +70,7 @@ function AuthPage() {
 
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-md rounded-2xl border border-border bg-background p-8 shadow-sm">
-          <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Institution
-          </label>
-          <select
-            value={institutionId}
-            onChange={(e) => handleInstitutionChange(e.target.value)}
-            className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-          >
-            {institutions.map((inst) => (
-              <option key={inst.id} value={inst.id}>
-                {inst.name}
-              </option>
-            ))}
-          </select>
-
-          <h2 className="mt-6 font-serif text-2xl text-foreground">
+          <h2 className="font-serif text-2xl text-foreground">
             {mode === "signin" ? "Sign in" : "Create your account"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
