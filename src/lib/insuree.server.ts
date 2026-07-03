@@ -178,3 +178,44 @@ export async function getOpenimisInsuree(uuid: string): Promise<Insuree | null> 
   const node = data.insurees?.edges?.[0]?.node;
   return node ? mapInsuree(node) : null;
 }
+
+export interface UpdateInsureeInput {
+  uuid: string;
+  chfId: string;
+  lastName: string;
+  otherNames: string;
+  gender: string; // "M" | "F" -- Gender.code, confirmed via GENDER_LABELS in the detail view
+  dob: string; // ISO date
+  head: boolean;
+  phone: string | null;
+  email: string | null;
+  currentAddress: string | null;
+}
+
+// UpdateInsureeMutationInput requires the full record (lastName/otherNames/
+// genderId/dob), not a partial patch -- openIMIS's InsureeService applies
+// each field it's given via setattr, so fields we simply omit here
+// (familyId, currentVillageId, ...) are left untouched rather than cleared.
+const UPDATE_INSUREE_MUTATION = `
+  mutation UpdateInsuree($input: UpdateInsureeMutationInput!) {
+    updateInsuree(input: $input) { clientMutationId }
+  }
+`;
+
+export async function updateOpenimisInsuree(input: UpdateInsureeInput): Promise<void> {
+  await graphqlRequest(UPDATE_INSUREE_MUTATION, {
+    input: {
+      clientMutationId: crypto.randomUUID(),
+      uuid: input.uuid,
+      chfId: input.chfId,
+      lastName: input.lastName,
+      otherNames: input.otherNames,
+      genderId: input.gender,
+      dob: input.dob,
+      head: input.head,
+      phone: input.phone,
+      email: input.email,
+      currentAddress: input.currentAddress,
+    },
+  });
+}

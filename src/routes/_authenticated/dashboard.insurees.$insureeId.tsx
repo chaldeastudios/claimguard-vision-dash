@@ -1,7 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchInsuree } from "@/lib/families-api";
+import { InsureeEditDialog } from "@/components/insuree-edit-dialog";
 import { ArrowLeft, Crown, User } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard/insurees/$insureeId")({
@@ -18,6 +19,7 @@ const GENDER_LABELS: Record<string, string> = { M: "Male", F: "Female" };
 
 function InsureeDetail() {
   const { insureeId } = Route.useParams();
+  const qc = useQueryClient();
   const fetchInsureeFn = useServerFn(fetchInsuree);
 
   const {
@@ -66,10 +68,16 @@ function InsureeDetail() {
             <ArrowLeft className="h-3.5 w-3.5" /> Back to families
           </Link>
         )}
-        <h1 className="mt-2 flex items-center gap-2 font-serif text-4xl">
-          {insuree.head && <Crown className="h-7 w-7 text-[color:var(--brand-orange)]" />}
-          <span className="accent-word">{insuree.name}</span>
-        </h1>
+        <div className="mt-2 flex items-center justify-between gap-4">
+          <h1 className="flex items-center gap-2 font-serif text-4xl">
+            {insuree.head && <Crown className="h-7 w-7 text-[color:var(--brand-orange)]" />}
+            <span className="accent-word">{insuree.name}</span>
+          </h1>
+          <InsureeEditDialog
+            insuree={insuree}
+            onSaved={() => qc.invalidateQueries({ queryKey: ["insuree", insureeId] })}
+          />
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
