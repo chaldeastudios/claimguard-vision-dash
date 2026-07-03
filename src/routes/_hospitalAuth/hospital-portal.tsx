@@ -305,18 +305,45 @@ function HospitalPortal() {
     await supabase.auth.signOut();
     navigate({ to: "/auth/hospital", replace: true });
   }
-  const { data: diagnoses = [], isLoading: diagnosesLoading } = useQuery({
+  const {
+    data: diagnoses = [],
+    isLoading: diagnosesLoading,
+    error: diagnosesError,
+  } = useQuery({
     queryKey: ["public-diagnoses"],
     queryFn: () => fetchDiagnosesFn(),
   });
-  const { data: medicalItems = [], isLoading: itemsLoading } = useQuery({
+  const {
+    data: medicalItems = [],
+    isLoading: itemsLoading,
+    error: itemsError,
+  } = useQuery({
     queryKey: ["public-medical-items"],
     queryFn: () => fetchItemsFn(),
   });
-  const { data: medicalServices = [], isLoading: servicesLoading } = useQuery({
+  const {
+    data: medicalServices = [],
+    isLoading: servicesLoading,
+    error: servicesError,
+  } = useQuery({
     queryKey: ["public-medical-services"],
     queryFn: () => fetchServicesFn(),
   });
+
+  // These three catalog fetches were previously swallowing errors -- the
+  // query would fail, isLoading would settle to false, and the UI would
+  // just show "Nothing loaded from openIMIS yet." with no indication
+  // *why*, making a permission/schema mismatch indistinguishable from an
+  // empty catalog. Surface the real error instead.
+  useEffect(() => {
+    if (diagnosesError) toast.error(`Diagnoses: ${diagnosesError.message}`);
+  }, [diagnosesError]);
+  useEffect(() => {
+    if (itemsError) toast.error(`Items: ${itemsError.message}`);
+  }, [itemsError]);
+  useEffect(() => {
+    if (servicesError) toast.error(`Services: ${servicesError.message}`);
+  }, [servicesError]);
 
   const [facilityId, setFacilityId] = useState("");
 
