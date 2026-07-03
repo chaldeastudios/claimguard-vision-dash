@@ -40,6 +40,16 @@ function Kpi({
   );
 }
 
+function MiniStat({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="rounded-3xl bg-[color:var(--brand-cream)] p-6">
+      <div className="font-serif text-2xl leading-none text-foreground">{value}</div>
+      <div className="mt-2 text-sm font-medium text-foreground">{label}</div>
+      <div className="mt-0.5 text-xs text-muted-foreground">{sub}</div>
+    </div>
+  );
+}
+
 function Donut({ high, med, low }: { high: number; med: number; low: number }) {
   const total = Math.max(high + med + low, 1);
   const c = 2 * Math.PI * 60;
@@ -179,6 +189,67 @@ function Overview() {
     ? Math.round(scored.reduce((s, c) => s + (c.analysis?.risk_score ?? 0), 0) / scored.length)
     : 0;
 
+  // --- Richer analytics, all derived from the claims already loaded ---
+  const coveragePct = claims.length ? Math.round((scored.length / claims.length) * 100) : 0;
+  const highRiskRate = scored.length ? Math.round((high / scored.length) * 100) : 0;
+  const totalClaimedValue = claims.reduce((s, c) => s + c.amount, 0);
+  const largestFlagged = scored
+    .filter((c) => (c.analysis?.risk_level as RiskLevel) !== "Low")
+    .reduce((mx, c) => Math.max(mx, c.amount), 0);
+
+  // Per-facility rollup, ranked by estimated value at risk (High+Medium).
+  const facilityStats = useMemo(() => {
+    const m = new Map<
+      string,
+      {
+        facility: string;
+        count: number;
+        high: number;
+        med: number;
+        low: number;
+        valueAtRisk: number;
+      }
+    >();
+    for (const c of claims) {
+      const e = m.get(c.facility) ?? {
+        facility: c.facility,
+        count: 0,
+        high: 0,
+        med: 0,
+        low: 0,
+        valueAtRisk: 0,
+      };
+      e.count += 1;
+      const lvl = c.analysis?.risk_level as RiskLevel | undefined;
+      if (lvl === "High") e.high += 1;
+      else if (lvl === "Medium") e.med += 1;
+      else if (lvl === "Low") e.low += 1;
+      if (lvl === "High" || lvl === "Medium") e.valueAtRisk += c.amount;
+      m.set(c.facility, e);
+    }
+    return Array.from(m.values()).sort((a, b) => b.valueAtRisk - a.valueAtRisk);
+  }, [claims]);
+  const topFacilities = facilityStats.slice(0, 5);
+  const maxFacilityValue = Math.max(1, ...topFacilities.map((f) => f.valueAtRisk));
+
+  // Top diagnoses among flagged (High/Medium) claims -- what's driving risk.
+  const topFlaggedDiagnoses = useMemo(() => {
+    const m = new Map<string, { key: string; label: string; count: number }>();
+    for (const c of scored) {
+      const lvl = c.analysis?.risk_level as RiskLevel | undefined;
+      if (lvl !== "High" && lvl !== "Medium") continue;
+      const key = c.diagnosisCode || c.diagnosis || "—";
+      const label = c.diagnosisCode ? `${c.diagnosisCode} · ${c.diagnosis}` : c.diagnosis || "—";
+      const e = m.get(key) ?? { key, label, count: 0 };
+      e.count += 1;
+      m.set(key, e);
+    }
+    return Array.from(m.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [scored]);
+  const maxDiagCount = Math.max(1, ...topFlaggedDiagnoses.map((d) => d.count));
+
   const rows = useMemo(() => {
     let r = claims.slice();
     if (q) {
@@ -255,7 +326,102 @@ function Overview() {
             />
           </div>
 
-          <Donut high={high} med={med} low={low} />
+          <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
+            <Donut high={high} med={med} low={low} />
+
+            {/* Secondary stat tiles -- coverage, flag rate, exposure */}
+            <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-2">
+              <MiniStat
+                label="Analysis coverage"
+                value={`${coveragePct}%`}
+                sub={`${scored.length} of ${claims.length} scored`}
+              />
+              <MiniStat
+                label="High-risk rate"
+                value={`${highRiskRate}%`}
+                sub={`${high} of ${scored.length} scored claims`}
+              />
+              <MiniStat
+                label="Largest flagged claim"
+                value={largestFlagged ? fmtKES(largestFlagged) : "—"}
+                sub="Single highest High/Medium claim"
+              />
+              <MiniStat
+                label="Total claimed (queue)"
+                value={fmtKES(totalClaimedValue)}
+                sub={`${claims.length} claims in queue`}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            {/* Facility leaderboard by value at risk */}
+            <div className="rounded-3xl bg-[color:var(--brand-cream)] p-7">
+              <h3 className="font-serif text-lg">
+                Facilities by <span className="accent-word">value at risk</span>
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Estimated High + Medium exposure per facility
+              </p>
+              <div className="mt-5 space-y-4">
+                {topFacilities.map((f) => (
+                  <div key={f.facility}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="truncate pr-3 text-foreground">{f.facility}</span>
+                      <span className="shrink-0 font-medium text-foreground">
+                        {fmtKES(f.valueAtRisk)}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-background/70">
+                      <div
+                        className="h-full rounded-full bg-[color:var(--brand-brown)]"
+                        style={{ width: `${(f.valueAtRisk / maxFacilityValue) * 100}%` }}
+                      />
+                    </div>
+                    <div className="mt-1 flex gap-3 text-[11px] text-muted-foreground">
+                      <span>{f.count} claims</span>
+                      <span className="text-[color:var(--risk-high)]">{f.high} high</span>
+                      <span className="text-[color:var(--risk-med)]">{f.med} med</span>
+                    </div>
+                  </div>
+                ))}
+                {topFacilities.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No facility data yet.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Top diagnoses driving flags */}
+            <div className="rounded-3xl bg-[color:var(--brand-cream)] p-7">
+              <h3 className="font-serif text-lg">
+                Diagnoses driving <span className="accent-word">flags</span>
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Most common diagnoses among High/Medium-risk claims
+              </p>
+              <div className="mt-5 space-y-4">
+                {topFlaggedDiagnoses.map((d) => (
+                  <div key={d.key}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="truncate pr-3 text-foreground">{d.label}</span>
+                      <span className="shrink-0 font-medium text-foreground">{d.count}</span>
+                    </div>
+                    <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-background/70">
+                      <div
+                        className="h-full rounded-full bg-[color:var(--brand-sage)]"
+                        style={{ width: `${(d.count / maxDiagCount) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {topFlaggedDiagnoses.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No flagged claims yet — run AI analysis to populate this.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
 
           <div>
             <div className="flex flex-wrap items-end justify-between gap-4">
