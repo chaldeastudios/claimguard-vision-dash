@@ -9,10 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as HospitalAuthRouteRouteImport } from './routes/_hospitalAuth/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as AuthInsurerRouteImport } from './routes/auth.insurer'
 import { Route as AuthHospitalRouteImport } from './routes/auth.hospital'
 import { Route as HospitalAuthHospitalPortalRouteImport } from './routes/_hospitalAuth/hospital-portal'
@@ -33,11 +33,6 @@ import { Route as AuthenticatedDashboardHospitalsFacilityIdRouteImport } from '.
 import { Route as AuthenticatedDashboardFamiliesFamilyIdRouteImport } from './routes/_authenticated/dashboard.families.$familyId'
 import { Route as AuthenticatedDashboardClaimsClaimIdRouteImport } from './routes/_authenticated/dashboard.claims.$claimId'
 
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const HospitalAuthRouteRoute = HospitalAuthRouteRouteImport.update({
   id: '/_hospitalAuth',
   getParentRoute: () => rootRouteImport,
@@ -51,15 +46,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: '/auth/',
+  path: '/auth/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthInsurerRoute = AuthInsurerRouteImport.update({
-  id: '/insurer',
-  path: '/insurer',
-  getParentRoute: () => AuthRoute,
+  id: '/auth/insurer',
+  path: '/auth/insurer',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthHospitalRoute = AuthHospitalRouteImport.update({
-  id: '/hospital',
-  path: '/hospital',
-  getParentRoute: () => AuthRoute,
+  id: '/auth/hospital',
+  path: '/auth/hospital',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const HospitalAuthHospitalPortalRoute =
   HospitalAuthHospitalPortalRouteImport.update({
@@ -165,11 +165,11 @@ const AuthenticatedDashboardClaimsClaimIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/hospital-portal': typeof HospitalAuthHospitalPortalRoute
   '/auth/hospital': typeof AuthHospitalRoute
   '/auth/insurer': typeof AuthInsurerRoute
+  '/auth/': typeof AuthIndexRoute
   '/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
   '/dashboard/families': typeof AuthenticatedDashboardFamiliesRouteWithChildren
   '/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRouteWithChildren
@@ -188,10 +188,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRouteWithChildren
   '/hospital-portal': typeof HospitalAuthHospitalPortalRoute
   '/auth/hospital': typeof AuthHospitalRoute
   '/auth/insurer': typeof AuthInsurerRoute
+  '/auth': typeof AuthIndexRoute
   '/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
   '/dashboard/policies': typeof AuthenticatedDashboardPoliciesRouteWithChildren
   '/dashboard/settings': typeof AuthenticatedDashboardSettingsRoute
@@ -210,11 +210,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_hospitalAuth': typeof HospitalAuthRouteRouteWithChildren
-  '/auth': typeof AuthRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_hospitalAuth/hospital-portal': typeof HospitalAuthHospitalPortalRoute
   '/auth/hospital': typeof AuthHospitalRoute
   '/auth/insurer': typeof AuthInsurerRoute
+  '/auth/': typeof AuthIndexRoute
   '/_authenticated/dashboard/claims': typeof AuthenticatedDashboardClaimsRouteWithChildren
   '/_authenticated/dashboard/families': typeof AuthenticatedDashboardFamiliesRouteWithChildren
   '/_authenticated/dashboard/hospitals': typeof AuthenticatedDashboardHospitalsRouteWithChildren
@@ -235,11 +235,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/auth'
     | '/dashboard'
     | '/hospital-portal'
     | '/auth/hospital'
     | '/auth/insurer'
+    | '/auth/'
     | '/dashboard/claims'
     | '/dashboard/families'
     | '/dashboard/hospitals'
@@ -258,10 +258,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/auth'
     | '/hospital-portal'
     | '/auth/hospital'
     | '/auth/insurer'
+    | '/auth'
     | '/dashboard/claims'
     | '/dashboard/policies'
     | '/dashboard/settings'
@@ -279,11 +279,11 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/_hospitalAuth'
-    | '/auth'
     | '/_authenticated/dashboard'
     | '/_hospitalAuth/hospital-portal'
     | '/auth/hospital'
     | '/auth/insurer'
+    | '/auth/'
     | '/_authenticated/dashboard/claims'
     | '/_authenticated/dashboard/families'
     | '/_authenticated/dashboard/hospitals'
@@ -305,18 +305,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   HospitalAuthRouteRoute: typeof HospitalAuthRouteRouteWithChildren
-  AuthRoute: typeof AuthRouteWithChildren
+  AuthHospitalRoute: typeof AuthHospitalRoute
+  AuthInsurerRoute: typeof AuthInsurerRoute
+  AuthIndexRoute: typeof AuthIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_hospitalAuth': {
       id: '/_hospitalAuth'
       path: ''
@@ -338,19 +333,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/': {
+      id: '/auth/'
+      path: '/auth'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/insurer': {
       id: '/auth/insurer'
-      path: '/insurer'
+      path: '/auth/insurer'
       fullPath: '/auth/insurer'
       preLoaderRoute: typeof AuthInsurerRouteImport
-      parentRoute: typeof AuthRoute
+      parentRoute: typeof rootRouteImport
     }
     '/auth/hospital': {
       id: '/auth/hospital'
-      path: '/hospital'
+      path: '/auth/hospital'
       fullPath: '/auth/hospital'
       preLoaderRoute: typeof AuthHospitalRouteImport
-      parentRoute: typeof AuthRoute
+      parentRoute: typeof rootRouteImport
     }
     '/_hospitalAuth/hospital-portal': {
       id: '/_hospitalAuth/hospital-portal'
@@ -611,23 +613,13 @@ const HospitalAuthRouteRouteChildren: HospitalAuthRouteRouteChildren = {
 const HospitalAuthRouteRouteWithChildren =
   HospitalAuthRouteRoute._addFileChildren(HospitalAuthRouteRouteChildren)
 
-interface AuthRouteChildren {
-  AuthHospitalRoute: typeof AuthHospitalRoute
-  AuthInsurerRoute: typeof AuthInsurerRoute
-}
-
-const AuthRouteChildren: AuthRouteChildren = {
-  AuthHospitalRoute: AuthHospitalRoute,
-  AuthInsurerRoute: AuthInsurerRoute,
-}
-
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   HospitalAuthRouteRoute: HospitalAuthRouteRouteWithChildren,
-  AuthRoute: AuthRouteWithChildren,
+  AuthHospitalRoute: AuthHospitalRoute,
+  AuthInsurerRoute: AuthInsurerRoute,
+  AuthIndexRoute: AuthIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

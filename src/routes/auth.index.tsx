@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Building2, ShieldCheck } from "lucide-react";
 import { LogoMark } from "@/components/brand/icons";
 
-export const Route = createFileRoute("/auth")({
+export const Route = createFileRoute("/auth/")({
   head: () => ({ meta: [{ title: "Sign in — ClaimGuard" }] }),
   component: AuthChooser,
 });
