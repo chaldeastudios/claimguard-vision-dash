@@ -117,7 +117,12 @@ try {
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: INSTITUTION_INIT_SCRIPT below sets
+    // data-institution on this element before React hydrates, deliberately
+    // out of band (same reason dark-mode init scripts need this) -- without
+    // it, React treats the attribute as a server/client mismatch and logs a
+    // hydration warning even though nothing is actually wrong.
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: INSTITUTION_INIT_SCRIPT }} />

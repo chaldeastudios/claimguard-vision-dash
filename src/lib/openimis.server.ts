@@ -102,26 +102,25 @@ interface OpenimisClaimDetailNode extends OpenimisClaimNode {
   icd2: DiagnosisRef | null;
   icd3: DiagnosisRef | null;
   icd4: DiagnosisRef | null;
-  items: {
-    edges: {
-      node: {
+  // ClaimItemGQLType/ClaimServiceGQLType are plain lists, not Relay
+  // connections -- no edges/node wrapping (confirmed live: querying edges
+  // on them errors with "Cannot query field \"edges\"").
+  items:
+    | {
         item: DiagnosisRef | null;
         qtyProvided: number | string | null;
         priceAsked: number | string | null;
         priceApproved: number | string | null;
-      };
-    }[];
-  } | null;
-  services: {
-    edges: {
-      node: {
+      }[]
+    | null;
+  services:
+    | {
         service: DiagnosisRef | null;
         qtyProvided: number | string | null;
         priceAsked: number | string | null;
         priceApproved: number | string | null;
-      };
-    }[];
-  } | null;
+      }[]
+    | null;
 }
 
 const CLAIM_NODE_FIELDS = `
@@ -178,24 +177,16 @@ const CLAIM_DETAIL_QUERY = `
           icd3 { code name }
           icd4 { code name }
           items {
-            edges {
-              node {
-                item { code name }
-                qtyProvided
-                priceAsked
-                priceApproved
-              }
-            }
+            item { code name }
+            qtyProvided
+            priceAsked
+            priceApproved
           }
           services {
-            edges {
-              node {
-                service { code name }
-                qtyProvided
-                priceAsked
-                priceApproved
-              }
-            }
+            service { code name }
+            qtyProvided
+            priceAsked
+            priceApproved
           }
         }
       }
@@ -247,25 +238,25 @@ function mapClaimDetail(node: OpenimisClaimDetailNode): ClaimDetail {
     .map((d) => ({ code: d.code!, name: d.name ?? "" }));
 
   const lineItems: ClaimLineItem[] = [
-    ...(node.items?.edges ?? [])
-      .filter((e) => e.node.item?.code)
-      .map((e) => ({
-        code: e.node.item!.code!,
-        name: e.node.item!.name ?? "",
+    ...(node.items ?? [])
+      .filter((n) => n.item?.code)
+      .map((n) => ({
+        code: n.item!.code!,
+        name: n.item!.name ?? "",
         kind: "item" as const,
-        quantityProvided: num(e.node.qtyProvided),
-        priceAsked: num(e.node.priceAsked),
-        priceApproved: num(e.node.priceApproved),
+        quantityProvided: num(n.qtyProvided),
+        priceAsked: num(n.priceAsked),
+        priceApproved: num(n.priceApproved),
       })),
-    ...(node.services?.edges ?? [])
-      .filter((e) => e.node.service?.code)
-      .map((e) => ({
-        code: e.node.service!.code!,
-        name: e.node.service!.name ?? "",
+    ...(node.services ?? [])
+      .filter((n) => n.service?.code)
+      .map((n) => ({
+        code: n.service!.code!,
+        name: n.service!.name ?? "",
         kind: "service" as const,
-        quantityProvided: num(e.node.qtyProvided),
-        priceAsked: num(e.node.priceAsked),
-        priceApproved: num(e.node.priceApproved),
+        quantityProvided: num(n.qtyProvided),
+        priceAsked: num(n.priceAsked),
+        priceApproved: num(n.priceApproved),
       })),
   ];
 
