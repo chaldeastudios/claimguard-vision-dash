@@ -218,7 +218,16 @@ services:
   # openIMIS React Frontend
   # ---------------------------------------------------------------------------
   frontend:
-    image: ghcr.io/openimis/openimis-fe:develop
+    # Built from our own fork (with the ClaimGuard module wired into its
+    # openimis.json) instead of pulling the stock public image -- building
+    # via Docker runs the exact same load-config/install/build sequence as
+    # the upstream image, inside a clean Linux container. That sidesteps
+    # every issue hit running it with plain npm on Windows (OneDrive path
+    # length, npm's yargs/dependency bootstrap ordering, Rollup's
+    # platform-specific optional-dependency install bug).
+    build:
+      context: ./openimis-fe_js
+      dockerfile: Dockerfile
     container_name: openimis-frontend
     restart: always
     depends_on:
