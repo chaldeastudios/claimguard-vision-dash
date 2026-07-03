@@ -101,3 +101,49 @@ export async function graphqlRequest<T>(
   }
   return json.data as T;
 }
+
+const MUTATION_LOG_QUERY = `
+  query MutationStatus($id: [UUID]) {
+    mutationLogs(clientMutationId: $id) {
+      edges { node { clientMutationId error } }
+    }
+  }
+`;
+
+// openIMIS mutations don't apply synchronously -- they enqueue a Celery task
+// (see docker-compose.yml's rabbitmq/worker services) and return right away
+// with just a clientMutationId, with no GraphQL-level error even if the
+// change is later rejected (bad permission, failed validation, ...). This
+// polls the audit log for that mutation and throws if it recorded an error,
+// so callers get a real failure instead of a false "success" toast.
+//
+// The mutationLogs(clientMutationId: ...) arg shape isn't independently
+// confirmed (best-effort match to openimis-fe_js's own convention) -- if
+// it's wrong this fails closed by logging a warning and treating the write
+// as unconfirmed rather than throwing, since a bad guess here shouldn't
+// turn a real success into a false failure.
+export async function confirmMutation(clientMutationId: string, timeoutMs = 8000): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    let node: { clientMutationId: string | null; error: string | null } | undefined;
+    try {
+      const data = await graphqlRequest<{
+        mutationLogs: {
+          edges: { node: { clientMutationId: string | null; error: string | null } }[];
+        };
+      }>(MUTATION_LOG_QUERY, { id: [clientMutationId] });
+      node = data.mutationLogs?.edges?.[0]?.node;
+    } catch (err) {
+      console.warn(
+        `[openimis] mutationLogs confirmation query failed, treating write as unconfirmed: ${err instanceof Error ? err.message : err}`,
+      );
+      return;
+    }
+    if (node) {
+      if (node.error) throw new Error(`openIMIS rejected the change: ${node.error}`);
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 400));
+  }
+  console.warn(`[openimis] mutation ${clientMutationId} not confirmed within ${timeoutMs}ms`);
+}

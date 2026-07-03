@@ -1,7 +1,7 @@
 // Family/Insuree-specific openIMIS queries. See openimis-client.server.ts
 // for the shared auth/fetch plumbing this builds on.
 
-import { graphqlRequest, MAX_PAGE_SIZE } from "./openimis-client.server";
+import { graphqlRequest, confirmMutation, MAX_PAGE_SIZE } from "./openimis-client.server";
 
 export interface Family {
   id: string; // openIMIS family uuid
@@ -220,21 +220,24 @@ const UPDATE_FAMILY_MUTATION = `
 `;
 
 export async function updateOpenimisFamily(input: UpdateFamilyInput): Promise<void> {
+  const clientMutationId = crypto.randomUUID();
   await graphqlRequest(UPDATE_FAMILY_MUTATION, {
     input: {
-      clientMutationId: crypto.randomUUID(),
+      clientMutationId,
       uuid: input.uuid,
       address: input.address,
       poverty: input.poverty,
       confirmationNo: input.confirmationNo,
     },
   });
+  await confirmMutation(clientMutationId);
 }
 
 export async function updateOpenimisInsuree(input: UpdateInsureeInput): Promise<void> {
+  const clientMutationId = crypto.randomUUID();
   await graphqlRequest(UPDATE_INSUREE_MUTATION, {
     input: {
-      clientMutationId: crypto.randomUUID(),
+      clientMutationId,
       uuid: input.uuid,
       chfId: input.chfId,
       lastName: input.lastName,
@@ -247,4 +250,5 @@ export async function updateOpenimisInsuree(input: UpdateInsureeInput): Promise<
       currentAddress: input.currentAddress,
     },
   });
+  await confirmMutation(clientMutationId);
 }
