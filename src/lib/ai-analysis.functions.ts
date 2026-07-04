@@ -81,7 +81,7 @@ async function callModel(model: string, apiKey: string, userPrompt: string) {
 export const analyzeClaim = createServerFn({ method: "POST" })
   .middleware([requireSession])
   .inputValidator((data) => Input.parse(data))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const geminiKey = process.env.GEMINI_API_KEY;
     if (!geminiKey) {
       throw new Error("No AI provider configured. Set GEMINI_API_KEY.");
@@ -149,7 +149,13 @@ Analyze this claim for fraud, abuse, or billing irregularities.`;
         reasons: safe.reasons,
         recommendation: safe.recommendation,
         raw: aiJson,
-        created_by: context.session.openimisUsername,
+        // This column is still typed `uuid` on Supabase (the migration
+        // loosening it to text -- see 20260704120000_remove_supabase_auth.sql
+        // -- may not be applied everywhere yet), and openIMIS usernames like
+        // "CHALDEA" aren't valid uuids, which fails the insert outright. A
+        // random uuid keeps the column happy without depending on that
+        // migration; this field is informational only, never read anywhere.
+        created_by: crypto.randomUUID(),
       })
       .select()
       .single();
