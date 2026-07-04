@@ -7,7 +7,7 @@ ClaimGuard detects fraudulent patterns in insurance claims — patient velocity 
 **Live Dashboard**: [https://claimguard.chaldeastudios.com/](https://claimguard.chaldeastudios.com/)
 
 ---
-
+ 
 ## Architecture Overview
 
 ```
