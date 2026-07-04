@@ -261,9 +261,11 @@ services:
     env_file:
       - .env
     ports:
-      - "5173:5173"
+      - "3001:3001"
     environment:
-      - PORT=5173
+      # Change this (and the port mapping above) if 3001 needs to move
+      # last-minute -- see vite.config.ts, which reads this same var.
+      - PORT=3001
       # Server-side only (src/lib/openimis.server.ts) -- the dashboard's
       # "Claims Queue" fetches live claim data from openIMIS's own GraphQL
       # API over the internal Docker network rather than duplicating claims

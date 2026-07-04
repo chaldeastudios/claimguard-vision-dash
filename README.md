@@ -14,7 +14,7 @@ ClaimGuard detects fraudulent patterns in insurance claims — patient velocity 
 ┌──────────────────────────────────────────────────────────────────┐
 │                    Nginx Gateway (port 80)                       │
 │  /api/ /graphql → backend:8000                                   │
-│  /claimguard/   → claimguard-dash:5173                           │
+│  /claimguard/   → claimguard-dash:3001                           │
 │  /              → frontend:3000 (openIMIS React UI)              │
 └──────────┬──────────────┬──────────────────┬─────────────────────┘
            │              │                  │
@@ -41,7 +41,7 @@ ClaimGuard detects fraudulent patterns in insurance claims — patient velocity 
 | `backend-init` | `openimis-backend-init` | — | One-shot: runs migrations + fixtures, then exits |
 | `backend` | `openimis-backend` | 8000 | Django backend with ClaimGuard fraud module |
 | `frontend` | `openimis-frontend` | 3000 | openIMIS React SPA |
-| `claimguard-dash` | `claimguard-dashboard` | 5173 | ClaimGuard fraud review dashboard |
+| `claimguard-dash` | `claimguard-dashboard` | 3001 | ClaimGuard fraud review dashboard |
 | `gateway` | `openimis-gateway` | **80** | Nginx reverse proxy (single entry point) |
 
 ---

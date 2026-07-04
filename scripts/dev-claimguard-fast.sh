@@ -34,7 +34,7 @@ if [ ! -x "node_modules/.bin/vite" ]; then
   clean_install
 fi
 
-echo "==> Starting ClaimGuard dashboard (npm run dev) on http://localhost:5173 ..."
+echo "==> Starting ClaimGuard dashboard (npm run dev) on http://localhost:3001 ..."
 if ! npm run dev -- --host; then
   # Common on Windows: an optional native binding (rolldown/rollup's
   # platform-specific .node binary) fails to install correctly on the first

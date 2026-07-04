@@ -27,5 +27,5 @@ cat <<'EOF'
 
 ==> Stack is up:
     openIMIS UI:      https://localhost/front   (self-signed cert warning expected)
-    ClaimGuard dash:  http://localhost:5173
+    ClaimGuard dash:  http://localhost:3001
 EOF
