@@ -63,6 +63,14 @@ function TypewriterText({ text, speedMs = 12 }: { text: string; speedMs?: number
   );
 }
 
+function RecommendationIcon({ recommendation }: { recommendation: string }) {
+  if (recommendation === "approve")
+    return <CheckCircle2 className="h-4 w-4 text-[color:var(--risk-low)]" />;
+  if (recommendation === "reject")
+    return <XCircle className="h-4 w-4 text-[color:var(--risk-high)]" />;
+  return <AlertTriangle className="h-4 w-4 text-[color:var(--brand-orange)]" />;
+}
+
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
@@ -180,17 +188,6 @@ function ClaimDetail() {
           <h1 className="mt-2 font-serif text-4xl">
             Claim <span className="accent-word">{c.code}</span>
           </h1>
-        </div>
-        <div className="flex gap-2">
-          <button className="inline-flex items-center gap-2 rounded-full bg-[color:var(--risk-low)] px-5 py-2.5 text-sm font-medium text-white hover:opacity-90">
-            <CheckCircle2 className="h-4 w-4" /> Approve
-          </button>
-          <button className="inline-flex items-center gap-2 rounded-full bg-[color:var(--brand-orange)] px-5 py-2.5 text-sm font-medium text-white hover:opacity-90">
-            <AlertTriangle className="h-4 w-4" /> Flag for Investigation
-          </button>
-          <button className="inline-flex items-center gap-2 rounded-full bg-[color:var(--risk-high)] px-5 py-2.5 text-sm font-medium text-white hover:opacity-90">
-            <XCircle className="h-4 w-4" /> Reject
-          </button>
         </div>
       </div>
 
@@ -437,6 +434,22 @@ function ClaimDetail() {
               <div className="mt-2 text-sm opacity-90">Not yet analyzed</div>
             )}
           </div>
+
+          {analysis && (
+            <div className="rounded-3xl bg-[color:var(--brand-cream)] p-7">
+              <h3 className="flex items-center gap-2 font-serif text-lg">
+                <RecommendationIcon recommendation={analysis.recommendation} />
+                Recommended action
+              </h3>
+              <p className="mt-2 text-sm font-medium capitalize text-foreground">
+                {analysis.recommendation}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                This is ClaimGuard's AI suggestion only — it doesn't act on the claim. To approve,
+                investigate, or reject it, open this claim in openIMIS directly.
+              </p>
+            </div>
+          )}
 
           <div className="rounded-3xl bg-[color:var(--brand-ink)] p-7 text-[color:var(--brand-ink-foreground)]">
             <div className="text-xs uppercase tracking-wider opacity-70">Financials</div>
