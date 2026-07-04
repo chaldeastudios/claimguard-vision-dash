@@ -23,10 +23,26 @@ until curl -s -o /dev/null http://localhost:8000/api/graphql; do
 done
 echo "    backend is up."
 
-if [ ! -x "node_modules/.bin/vite" ]; then
-  echo "==> node_modules missing or incomplete -- running npm install first..."
+clean_install() {
+  echo "==> Doing a clean install (rm -rf node_modules package-lock.json && npm install)..."
+  rm -rf node_modules package-lock.json
   npm install
+}
+
+if [ ! -x "node_modules/.bin/vite" ]; then
+  echo "==> node_modules missing or incomplete -- installing first..."
+  clean_install
 fi
 
 echo "==> Starting ClaimGuard dashboard (npm run dev) on http://localhost:5173 ..."
-npm run dev -- --host
+if ! npm run dev -- --host; then
+  # Common on Windows: an optional native binding (rolldown/rollup's
+  # platform-specific .node binary) fails to install correctly on the first
+  # `npm install` -- a known npm bug (npm/cli#4828), not a code problem. The
+  # documented fix is exactly this: wipe node_modules + the lockfile and
+  # reinstall from scratch. Try that once automatically before giving up.
+  echo "==> npm run dev failed -- retrying once with a clean install"
+  echo "    (this is usually npm/cli#4828, a Windows optional-dependency bug)..."
+  clean_install
+  npm run dev -- --host
+fi
