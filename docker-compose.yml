@@ -5,7 +5,7 @@ services:
   db:
     image: ghcr.io/openimis/openimis-pgsql:develop
     container_name: openimis-db
-    restart: always
+    restart: always 
     shm_size: 256mb
     environment:
       - POSTGRES_DB=openimis
