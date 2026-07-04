@@ -55,7 +55,7 @@ ClaimGuard detects fraudulent patterns in insurance claims — patient velocity 
 ---
 
 ## Quick Start
-
+ 
 Running this locally via Docker Compose is required, not optional — the
 hackathon's own pre-event checklist verifies a working local Docker stack at
 registration, and the live demo happens from what's running in the room. See
