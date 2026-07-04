@@ -6,18 +6,15 @@ import { toast } from "sonner";
 import { Loader2, Plus, Send, Trash2, CheckCircle2, X, LogOut, Check } from "lucide-react";
 import { OrganizationLogo } from "@/components/brand/organization-logo";
 import { logout } from "@/lib/auth.functions";
+import { CURRENT_PROFILE_QUERY_KEY, fetchCurrentProfile } from "@/lib/current-profile";
 import {
   fetchPublicHealthFacilities,
   searchPublicInsurees,
   searchPublicInsureesByName,
   submitHospitalClaim,
 } from "@/lib/hospital-portal-api";
-import {
-  fetchHospitalOrgContext,
-  fetchInsurerOrganizations,
-  assignClaimToInsurer,
-  type OrganizationSummary,
-} from "@/lib/organizations";
+import { fetchHospitalOrgContext } from "@/lib/organizations";
+import { INSURERS, type Institution } from "@/lib/institutions";
 import {
   fetchDiagnoses,
   fetchMedicalItems,
@@ -42,29 +39,15 @@ export const Route = createFileRoute("/_hospitalAuth/hospital-portal")({
   component: HospitalPortal,
 });
 
-function InsurerCard({
-  insurer,
-  selected,
-  onSelect,
-}: {
-  insurer: OrganizationSummary;
-  selected: boolean;
-  onSelect: () => void;
-}) {
+function InsurerCard({ insurer, onSelect }: { insurer: Institution; onSelect: () => void }) {
   return (
     <button
       type="button"
       onClick={onSelect}
-      className={
-        "relative flex items-center gap-3 rounded-2xl border p-4 text-left transition-colors " +
-        (selected
-          ? "border-[color:var(--brand-brown)] bg-[color:var(--brand-cream)]"
-          : "border-border/60 bg-background hover:bg-accent")
-      }
+      className="group flex items-center gap-3 rounded-2xl border border-border bg-background p-4 text-left transition-colors hover:border-[color:var(--brand-brown)] hover:bg-accent"
     >
-      <OrganizationLogo logoUrl={insurer.logoUrl} className="h-8 w-8 shrink-0" />
-      <span className="text-sm font-medium text-foreground">{insurer.name}</span>
-      {selected && <Check className="ml-auto h-4 w-4 shrink-0 text-[color:var(--brand-brown)]" />}
+      <OrganizationLogo logoUrl={insurer.logoUrl} className="h-9 w-9 shrink-0" />
+      <span className="truncate text-sm font-medium text-foreground">{insurer.name}</span>
     </button>
   );
 }
@@ -272,7 +255,6 @@ function HospitalPortal() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchOrgContextFn = useServerFn(fetchHospitalOrgContext);
-  const fetchInsurersFn = useServerFn(fetchInsurerOrganizations);
   const fetchFacilitiesFn = useServerFn(fetchPublicHealthFacilities);
   const searchPatientsByChfFn = useServerFn(searchPublicInsurees);
   const searchPatientsByNameFn = useServerFn(searchPublicInsureesByName);
@@ -280,16 +262,20 @@ function HospitalPortal() {
   const fetchItemsFn = useServerFn(fetchMedicalItems);
   const fetchServicesFn = useServerFn(fetchMedicalServices);
   const submitClaimFn = useServerFn(submitHospitalClaim);
-  const assignClaimFn = useServerFn(assignClaimToInsurer);
   const logoutFn = useServerFn(logout);
 
+  // The signed-in hospital's own name/logo comes straight from the session
+  // (which institution card was picked at login) -- no Supabase round trip.
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: CURRENT_PROFILE_QUERY_KEY,
+    queryFn: fetchCurrentProfile,
+  });
+  // Facility linkage is the one thing that still comes from openIMIS
+  // itself (via a Supabase organizations row, if one happens to match) --
+  // degrades gracefully to the manual facility picker below when it doesn't.
   const { data: orgContext, isLoading: orgContextLoading } = useQuery({
     queryKey: ["hospital-org-context"],
     queryFn: () => fetchOrgContextFn(),
-  });
-  const { data: insurers = [], isLoading: insurersLoading } = useQuery({
-    queryKey: ["insurer-organizations"],
-    queryFn: () => fetchInsurersFn(),
   });
   const lockedFacility = orgContext?.facility ?? null;
   // Only fetch the full facility roster when this account isn't already
@@ -393,7 +379,10 @@ function HospitalPortal() {
   }
 
   const [diagnosis, setDiagnosis] = useState<CatalogEntry | null>(null);
-  const [selectedInsurerId, setSelectedInsurerId] = useState<string | null>(null);
+  // Chosen up front, before the claim form itself is shown -- see the
+  // insurer-picker step below. UI-only: which insurer "brands" the form,
+  // not wired to any backend record.
+  const [selectedInsurer, setSelectedInsurer] = useState<Institution | null>(null);
   const [dateFrom, setDateFrom] = useState(today());
   const [explanation, setExplanation] = useState("");
   const [items, setItems] = useState<LineRow[]>([]);
@@ -408,13 +397,7 @@ function HospitalPortal() {
   }, [items, services]);
 
   const facility = lockedFacility ?? facilities.find((f) => f.id === facilityId) ?? null;
-  const canSubmit =
-    !!facility &&
-    !!selectedPatient &&
-    !!diagnosis &&
-    !!selectedInsurerId &&
-    !!dateFrom &&
-    !submitting;
+  const canSubmit = !!facility && !!selectedPatient && !!diagnosis && !!dateFrom && !submitting;
 
   function resetForm() {
     setFacilityId("");
@@ -422,7 +405,6 @@ function HospitalPortal() {
     setChfQuery("");
     setSelectedPatient(null);
     setDiagnosis(null);
-    setSelectedInsurerId(null);
     setDateFrom(today());
     setExplanation("");
     setItems([]);
@@ -430,13 +412,8 @@ function HospitalPortal() {
   }
 
   async function handleSubmit() {
-    if (
-      !facility?.globalId ||
-      !selectedPatient?.globalId ||
-      !diagnosis?.globalId ||
-      !selectedInsurerId
-    ) {
-      toast.error("Select a facility, patient, diagnosis, and insurer before submitting.");
+    if (!facility?.globalId || !selectedPatient?.globalId || !diagnosis?.globalId) {
+      toast.error("Select a facility, patient, and diagnosis before submitting.");
       return;
     }
     setSubmitting(true);
@@ -463,15 +440,6 @@ function HospitalPortal() {
           services: toLine(services),
         },
       });
-      if (result.uuid) {
-        try {
-          await assignClaimFn({
-            data: { claimUuid: result.uuid, insurerOrganizationId: selectedInsurerId },
-          });
-        } catch {
-          toast.warning("Claim submitted, but couldn't tag it to the chosen insurer.");
-        }
-      }
       setConfirmation(result.code);
       resetForm();
     } catch (err) {
@@ -487,13 +455,13 @@ function HospitalPortal() {
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <OrganizationLogo
-              logoUrl={orgContext?.logoUrl}
-              loading={orgContextLoading}
+              logoUrl={profile?.logoUrl}
+              loading={profileLoading}
               className="h-12"
             />
             <div>
               <div className="font-serif text-2xl">
-                {orgContext?.name ? `${orgContext.name} ` : ""}
+                {profile?.organizationName ? `${profile.organizationName} ` : ""}
                 <span className="accent-word">Claim Submission</span>
               </div>
               <p className="text-sm text-muted-foreground">For registered facility staff</p>
@@ -525,8 +493,42 @@ function HospitalPortal() {
               Submit another claim
             </Button>
           </div>
+        ) : !selectedInsurer ? (
+          <div className="space-y-6">
+            <div>
+              <h1 className="font-serif text-4xl">
+                Which <span className="accent-word">insurer</span> is this claim for?
+              </h1>
+              <p className="mt-2 text-muted-foreground">
+                Pick the insurance provider you're submitting to. This only changes the branding on
+                the form below.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {INSURERS.map((ins) => (
+                <InsurerCard key={ins.id} insurer={ins} onSelect={() => setSelectedInsurer(ins)} />
+              ))}
+            </div>
+          </div>
         ) : (
           <div className="space-y-6">
+            <div className="flex items-center justify-between gap-4 rounded-2xl bg-[color:var(--brand-cream)] px-5 py-4">
+              <div className="flex items-center gap-3">
+                <OrganizationLogo logoUrl={selectedInsurer.logoUrl} className="h-8 w-8" />
+                <span className="text-sm text-foreground">
+                  Submitting to <span className="font-medium">{selectedInsurer.name}</span>
+                </span>
+                <Check className="h-4 w-4 text-[color:var(--risk-low)]" />
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedInsurer(null)}
+                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                Change insurer
+              </button>
+            </div>
+
             <div>
               <h1 className="font-serif text-4xl">
                 Submit a <span className="accent-word">claim</span>
@@ -624,31 +626,6 @@ function HospitalPortal() {
                     loading={diagnosesLoading}
                   />
                 </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-medium">Insurance provider</Label>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Which insurer should review this claim?
-                </p>
-                {insurersLoading ? (
-                  <p className="mt-2 text-sm text-muted-foreground">Loading insurers…</p>
-                ) : insurers.length === 0 ? (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    No insurance providers are set up yet.
-                  </p>
-                ) : (
-                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {insurers.map((ins) => (
-                      <InsurerCard
-                        key={ins.id}
-                        insurer={ins}
-                        selected={selectedInsurerId === ins.id}
-                        onSelect={() => setSelectedInsurerId(ins.id)}
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
 
               <div>
