@@ -23,5 +23,10 @@ until curl -s -o /dev/null http://localhost:8000/api/graphql; do
 done
 echo "    backend is up."
 
+if [ ! -x "node_modules/.bin/vite" ]; then
+  echo "==> node_modules missing or incomplete -- running npm install first..."
+  npm install
+fi
+
 echo "==> Starting ClaimGuard dashboard (npm run dev) on http://localhost:5173 ..."
 npm run dev -- --host
