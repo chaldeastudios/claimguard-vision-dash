@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as AuthInsurerRouteImport } from './routes/auth.insurer'
 import { Route as AuthHospitalRouteImport } from './routes/auth.hospital'
+import { Route as ApiClaimguardSummaryRouteImport } from './routes/api.claimguard-summary'
 import { Route as HospitalAuthHospitalPortalRouteImport } from './routes/_hospitalAuth/hospital-portal'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated/dashboard.index'
@@ -59,6 +60,11 @@ const AuthInsurerRoute = AuthInsurerRouteImport.update({
 const AuthHospitalRoute = AuthHospitalRouteImport.update({
   id: '/auth/hospital',
   path: '/auth/hospital',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiClaimguardSummaryRoute = ApiClaimguardSummaryRouteImport.update({
+  id: '/api/claimguard-summary',
+  path: '/api/claimguard-summary',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HospitalAuthHospitalPortalRoute =
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/hospital-portal': typeof HospitalAuthHospitalPortalRoute
+  '/api/claimguard-summary': typeof ApiClaimguardSummaryRoute
   '/auth/hospital': typeof AuthHospitalRoute
   '/auth/insurer': typeof AuthInsurerRoute
   '/auth/': typeof AuthIndexRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/hospital-portal': typeof HospitalAuthHospitalPortalRoute
+  '/api/claimguard-summary': typeof ApiClaimguardSummaryRoute
   '/auth/hospital': typeof AuthHospitalRoute
   '/auth/insurer': typeof AuthInsurerRoute
   '/auth': typeof AuthIndexRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/_hospitalAuth': typeof HospitalAuthRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_hospitalAuth/hospital-portal': typeof HospitalAuthHospitalPortalRoute
+  '/api/claimguard-summary': typeof ApiClaimguardSummaryRoute
   '/auth/hospital': typeof AuthHospitalRoute
   '/auth/insurer': typeof AuthInsurerRoute
   '/auth/': typeof AuthIndexRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/hospital-portal'
+    | '/api/claimguard-summary'
     | '/auth/hospital'
     | '/auth/insurer'
     | '/auth/'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/hospital-portal'
+    | '/api/claimguard-summary'
     | '/auth/hospital'
     | '/auth/insurer'
     | '/auth'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/_hospitalAuth'
     | '/_authenticated/dashboard'
     | '/_hospitalAuth/hospital-portal'
+    | '/api/claimguard-summary'
     | '/auth/hospital'
     | '/auth/insurer'
     | '/auth/'
@@ -305,6 +317,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   HospitalAuthRouteRoute: typeof HospitalAuthRouteRouteWithChildren
+  ApiClaimguardSummaryRoute: typeof ApiClaimguardSummaryRoute
   AuthHospitalRoute: typeof AuthHospitalRoute
   AuthInsurerRoute: typeof AuthInsurerRoute
   AuthIndexRoute: typeof AuthIndexRoute
@@ -352,6 +365,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/hospital'
       fullPath: '/auth/hospital'
       preLoaderRoute: typeof AuthHospitalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/claimguard-summary': {
+      id: '/api/claimguard-summary'
+      path: '/api/claimguard-summary'
+      fullPath: '/api/claimguard-summary'
+      preLoaderRoute: typeof ApiClaimguardSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_hospitalAuth/hospital-portal': {
@@ -617,6 +637,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   HospitalAuthRouteRoute: HospitalAuthRouteRouteWithChildren,
+  ApiClaimguardSummaryRoute: ApiClaimguardSummaryRoute,
   AuthHospitalRoute: AuthHospitalRoute,
   AuthInsurerRoute: AuthInsurerRoute,
   AuthIndexRoute: AuthIndexRoute,
