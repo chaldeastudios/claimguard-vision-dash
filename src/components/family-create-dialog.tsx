@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { createFamily } from "@/lib/families-api";
+import { getErrorMessage } from "@/lib/error-message";
 
 const CreateFamilySchema = z.object({
   address: z.string(),
@@ -67,7 +68,7 @@ export function FamilyCreateDialog({ onCreated }: { onCreated: () => void }) {
       form.reset(DEFAULTS);
       onCreated();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create household");
+      toast.error(getErrorMessage(err, "Failed to create household"));
     } finally {
       setSaving(false);
     }

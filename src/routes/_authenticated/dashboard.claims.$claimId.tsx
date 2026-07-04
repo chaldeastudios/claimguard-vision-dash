@@ -14,6 +14,7 @@ import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Loader2, Sparkles } fr
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonCard } from "@/components/skeletons";
+import { getErrorMessage } from "@/lib/error-message";
 
 // autoAnalyze lets an external deep link (the openIMIS claims list's "AI
 // Analysis" button, see the openimis-fe-fraud_js module) land here and
@@ -120,7 +121,7 @@ function ClaimDetail() {
       setJustAnalyzed(true);
       toast.success("AI analysis complete");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "AI analysis failed");
+      toast.error(getErrorMessage(err, "AI analysis failed"));
     } finally {
       setAnalyzing(false);
     }
@@ -137,7 +138,7 @@ function ClaimDetail() {
     return (
       <div className="p-10 text-sm text-[color:var(--risk-high)]">
         Failed to load claim from openIMIS:{" "}
-        {claimError instanceof Error ? claimError.message : String(claimError)}
+        {getErrorMessage(claimError)}
       </div>
     );
   }

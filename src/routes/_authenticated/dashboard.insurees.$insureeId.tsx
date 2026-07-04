@@ -5,6 +5,7 @@ import { fetchInsuree } from "@/lib/families-api";
 import { InsureeEditDialog } from "@/components/insuree-edit-dialog";
 import { SkeletonDetailPage } from "@/components/skeletons";
 import { ArrowLeft, Crown, User } from "lucide-react";
+import { getErrorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/_authenticated/dashboard/insurees/$insureeId")({
   component: InsureeDetail,
@@ -41,7 +42,7 @@ function InsureeDetail() {
     return (
       <div className="p-10 text-sm text-[color:var(--risk-high)]">
         Failed to load insuree from openIMIS:{" "}
-        {error instanceof Error ? error.message : String(error)}
+        {getErrorMessage(error)}
       </div>
     );
   }

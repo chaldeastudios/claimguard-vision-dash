@@ -7,6 +7,7 @@ import { fmtKES } from "@/lib/claims-api";
 import { FamilyEditDialog } from "@/components/family-edit-dialog";
 import { SkeletonDetailPage } from "@/components/skeletons";
 import { ArrowLeft, Crown, Users, ShieldCheck } from "lucide-react";
+import { getErrorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/_authenticated/dashboard/families/$familyId")({
   component: FamilyDetail,
@@ -55,7 +56,7 @@ function FamilyDetail() {
     return (
       <div className="p-10 text-sm text-[color:var(--risk-high)]">
         Failed to load family from openIMIS:{" "}
-        {error instanceof Error ? error.message : String(error)}
+        {getErrorMessage(error)}
       </div>
     );
   }

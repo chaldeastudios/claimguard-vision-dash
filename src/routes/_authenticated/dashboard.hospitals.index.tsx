@@ -7,6 +7,7 @@ import { fetchHealthFacilities } from "@/lib/healthfacility-api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/skeletons";
 import { Search } from "lucide-react";
+import { getErrorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/_authenticated/dashboard/hospitals/")({
   head: () => ({ meta: [{ title: "Hospitals — ClaimGuard" }] }),
@@ -84,7 +85,7 @@ function Hospitals() {
       {isError && (
         <div className="rounded-3xl bg-[color:var(--risk-high)]/10 p-6 text-sm text-[color:var(--risk-high)]">
           Failed to load facilities from openIMIS:{" "}
-          {error instanceof Error ? error.message : String(error)}
+          {getErrorMessage(error)}
         </div>
       )}
 

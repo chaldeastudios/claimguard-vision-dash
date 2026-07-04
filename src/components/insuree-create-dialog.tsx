@@ -32,6 +32,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { createInsuree } from "@/lib/families-api";
+import { getErrorMessage } from "@/lib/error-message";
 
 const CreateInsureeSchema = z.object({
   chfId: z.string().min(1, "CHF ID is required"),
@@ -94,7 +95,7 @@ export function InsureeCreateDialog({ onCreated }: { onCreated: () => void }) {
       form.reset(DEFAULTS);
       onCreated();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create insuree");
+      toast.error(getErrorMessage(err, "Failed to create insuree"));
     } finally {
       setSaving(false);
     }

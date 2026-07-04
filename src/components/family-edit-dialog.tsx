@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { updateFamily } from "@/lib/families-api";
 import type { Family } from "@/lib/insuree.server";
+import { getErrorMessage } from "@/lib/error-message";
 
 const EditFamilySchema = z.object({
   address: z.string(),
@@ -74,7 +75,7 @@ export function FamilyEditDialog({ family, onSaved }: { family: Family; onSaved:
       setOpen(false);
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update household");
+      toast.error(getErrorMessage(err, "Failed to update household"));
     } finally {
       setSaving(false);
     }

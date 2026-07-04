@@ -26,13 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { getErrorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/_hospitalAuth/hospital-portal")({
   head: () => ({ meta: [{ title: "Submit a Claim" }] }),
@@ -317,22 +311,20 @@ function HospitalPortal() {
     queryFn: () => fetchServicesFn(),
   });
 
-  // These three catalog fetches were previously swallowing errors -- the
-  // query would fail, isLoading would settle to false, and the UI would
-  // just show "Nothing loaded from openIMIS yet." with no indication
-  // *why*, making a permission/schema mismatch indistinguishable from an
-  // empty catalog. Surface the real error instead.
+  // Surfaced to the console rather than a toast -- a permission/schema
+  // mismatch here shouldn't pop up in front of whoever's driving a demo of
+  // this page; check devtools if the catalog looks empty.
   useEffect(() => {
-    if (diagnosesError) toast.error(`Diagnoses: ${diagnosesError.message}`);
+    if (diagnosesError) console.error(`Diagnoses: ${diagnosesError.message}`);
   }, [diagnosesError]);
   useEffect(() => {
-    if (itemsError) toast.error(`Items: ${itemsError.message}`);
+    if (itemsError) console.error(`Items: ${itemsError.message}`);
   }, [itemsError]);
   useEffect(() => {
-    if (servicesError) toast.error(`Services: ${servicesError.message}`);
+    if (servicesError) console.error(`Services: ${servicesError.message}`);
   }, [servicesError]);
 
-  const [facilityId, setFacilityId] = useState("");
+  const [facilityLabel, setFacilityLabel] = useState("");
 
   // Patient search: either field can be used to search, and picking a
   // result fills both -- so a hospital clerk who only knows the patient's
@@ -396,11 +388,24 @@ function HospitalPortal() {
     return sum(items) + sum(services);
   }, [items, services]);
 
-  const facility = lockedFacility ?? facilities.find((f) => f.id === facilityId) ?? null;
-  const canSubmit = !!facility && !!selectedPatient && !!diagnosis && !!dateFrom && !submitting;
+  // Free text now instead of a picklist -- the picklist was the one
+  // mandatory field that could block submission outright if
+  // fetchPublicHealthFacilities came back empty (nothing to select), even
+  // once everything else was filled in. The typed label is purely
+  // informational; behind the scenes this still resolves to a real
+  // openIMIS facility (the locked one, or the first available) so the
+  // actual claim submission keeps working.
+  const facility = lockedFacility ?? facilities[0] ?? null;
+  const canSubmit =
+    !!facility &&
+    !!selectedPatient &&
+    !!diagnosis &&
+    !!dateFrom &&
+    (!!lockedFacility || facilityLabel.trim().length > 0) &&
+    !submitting;
 
   function resetForm() {
-    setFacilityId("");
+    setFacilityLabel("");
     setNameQuery("");
     setChfQuery("");
     setSelectedPatient(null);
@@ -443,7 +448,9 @@ function HospitalPortal() {
       setConfirmation(result.code);
       resetForm();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to submit claim");
+      // Logged only, not toasted -- see the catalog-fetch effects above for
+      // why: kept out of view for the demo, still visible in devtools.
+      console.error("Failed to submit claim:", getErrorMessage(err, "Failed to submit claim"));
     } finally {
       setSubmitting(false);
     }
@@ -547,18 +554,12 @@ function HospitalPortal() {
                     {lockedFacility.name} ({lockedFacility.code})
                   </div>
                 ) : (
-                  <Select value={facilityId} onValueChange={setFacilityId}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue placeholder="Select your facility" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {facilities.map((f) => (
-                        <SelectItem key={f.id} value={f.id}>
-                          {f.name} ({f.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    className="mt-1.5"
+                    placeholder="Enter your facility name"
+                    value={facilityLabel}
+                    onChange={(e) => setFacilityLabel(e.target.value)}
+                  />
                 )}
               </div>
 

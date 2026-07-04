@@ -6,6 +6,7 @@ import { fmtKES } from "@/lib/claims-api";
 import { PremiumDialog } from "@/components/premium-dialog";
 import { SkeletonDetailPage } from "@/components/skeletons";
 import { ArrowLeft, ShieldCheck, Wallet } from "lucide-react";
+import { getErrorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/_authenticated/dashboard/policies/$policyId")({
   component: PolicyDetail,
@@ -54,7 +55,7 @@ function PolicyDetail() {
     return (
       <div className="p-10 text-sm text-[color:var(--risk-high)]">
         Failed to load policy from openIMIS:{" "}
-        {error instanceof Error ? error.message : String(error)}
+        {getErrorMessage(error)}
       </div>
     );
   }

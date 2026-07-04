@@ -6,6 +6,7 @@ import { fetchHealthFacility } from "@/lib/healthfacility-api";
 import { fetchClaims, fmtKES } from "@/lib/claims-api";
 import { SkeletonDetailPage } from "@/components/skeletons";
 import { ArrowLeft, Building2, ShieldAlert } from "lucide-react";
+import { getErrorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/_authenticated/dashboard/hospitals/$facilityId")({
   component: HospitalDetail,
@@ -61,7 +62,7 @@ function HospitalDetail() {
     return (
       <div className="p-10 text-sm text-[color:var(--risk-high)]">
         Failed to load facility from openIMIS:{" "}
-        {error instanceof Error ? error.message : String(error)}
+        {getErrorMessage(error)}
       </div>
     );
   }

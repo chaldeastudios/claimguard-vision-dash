@@ -7,6 +7,7 @@ import { InsureeCreateDialog } from "@/components/insuree-create-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonTable } from "@/components/skeletons";
 import { Search, Crown } from "lucide-react";
+import { getErrorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/_authenticated/dashboard/insurees/")({
   head: () => ({ meta: [{ title: "Insurees — ClaimGuard" }] }),
@@ -52,7 +53,7 @@ function InsureesList() {
       {isError && (
         <div className="rounded-2xl bg-[color:var(--risk-high)]/10 p-4 text-sm text-[color:var(--risk-high)]">
           Failed to load insurees from openIMIS:{" "}
-          {error instanceof Error ? error.message : String(error)}
+          {getErrorMessage(error)}
         </div>
       )}
 

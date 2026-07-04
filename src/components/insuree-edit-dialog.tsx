@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { updateInsuree } from "@/lib/families-api";
 import type { Insuree } from "@/lib/insuree.server";
+import { getErrorMessage } from "@/lib/error-message";
 
 const EditInsureeSchema = z.object({
   chfId: z.string().min(1, "CHF ID is required"),
@@ -109,7 +110,7 @@ export function InsureeEditDialog({ insuree, onSaved }: { insuree: Insuree; onSa
       setOpen(false);
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update insuree");
+      toast.error(getErrorMessage(err, "Failed to update insuree"));
     } finally {
       setSaving(false);
     }

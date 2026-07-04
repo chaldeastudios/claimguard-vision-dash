@@ -8,6 +8,7 @@ import { CURRENT_PROFILE_QUERY_KEY, fetchCurrentProfile } from "@/lib/current-pr
 import { uploadOrganizationLogo, updateOrganizationName } from "@/lib/organization-logo";
 import { OrganizationLogo } from "@/components/brand/organization-logo";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getErrorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/_authenticated/dashboard/settings")({
   component: Settings,
@@ -39,7 +40,7 @@ function Settings() {
       await qc.invalidateQueries({ queryKey: CURRENT_PROFILE_QUERY_KEY });
       toast.success("Organization name updated");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save");
+      toast.error(getErrorMessage(err, "Failed to save"));
     } finally {
       setSaving(false);
     }
@@ -57,7 +58,7 @@ function Settings() {
       await qc.invalidateQueries({ queryKey: CURRENT_PROFILE_QUERY_KEY });
       toast.success("Logo updated — now live on your dashboard");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to upload logo");
+      toast.error(getErrorMessage(err, "Failed to upload logo"));
     } finally {
       setUploading(false);
     }

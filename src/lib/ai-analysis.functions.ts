@@ -17,6 +17,67 @@ Respond ONLY with a single JSON object, no markdown, matching this schema:
   "recommendation": "approve" | "investigate" | "reject"
 }`;
 
+// Google's OpenAI-compatible endpoint — same request/response shape.
+const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+
+// Tried in order until one succeeds -- a single model name can be
+// temporarily overloaded, rate-limited, or renamed/retired without
+// warning, and this is a demo where "AI analysis failed" outright is worse
+// than falling back to a slightly different model. Fastest/cheapest first.
+const MODEL_FALLBACKS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-2.0-flash",
+  "gemini-flash-latest",
+];
+
+const AnalysisSchema = z.object({
+  risk_score: z.number().int().min(0).max(100),
+  risk_level: z.enum(["High", "Medium", "Low"]),
+  summary: z.string().min(1),
+  reasons: z
+    .array(z.object({ title: z.string(), detail: z.string() }))
+    .min(1)
+    .max(8),
+  recommendation: z.string().min(1),
+});
+
+async function callModel(model: string, apiKey: string, userPrompt: string) {
+  const res = await fetch(GEMINI_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`${model}: HTTP ${res.status} ${txt.slice(0, 300)}`);
+  }
+  const aiJson = await res.json();
+  const content: string = aiJson?.choices?.[0]?.message?.content ?? "";
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error(`${model}: returned non-JSON content`);
+  }
+  const result = AnalysisSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error(`${model}: response didn't match the expected shape (${result.error.message})`);
+  }
+  return { aiJson, safe: result.data };
+}
+
 export const analyzeClaim = createServerFn({ method: "POST" })
   .middleware([requireSession])
   .inputValidator((data) => Input.parse(data))
@@ -25,12 +86,6 @@ export const analyzeClaim = createServerFn({ method: "POST" })
     if (!geminiKey) {
       throw new Error("No AI provider configured. Set GEMINI_API_KEY.");
     }
-    const provider = {
-      // Google's OpenAI-compatible endpoint — same request/response shape.
-      endpoint: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      apiKey: geminiKey,
-      model: "gemini-2.5-flash",
-    };
 
     const claim = await getOpenimisClaim(data.claimId);
     if (!claim) throw new Error("Claim not found");
@@ -63,53 +118,24 @@ Submitted: ${claim.submittedAt}
 
 Analyze this claim for fraud, abuse, or billing irregularities.`;
 
-    const model = provider.model;
-    const aiRes = await fetch(provider.endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${provider.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    if (!aiRes.ok) {
-      const txt = await aiRes.text();
-      throw new Error(`AI gateway ${aiRes.status}: ${txt.slice(0, 300)}`);
+    let result: Awaited<ReturnType<typeof callModel>> | null = null;
+    let usedModel: string | null = null;
+    const attemptErrors: string[] = [];
+    for (const model of MODEL_FALLBACKS) {
+      try {
+        result = await callModel(model, geminiKey, userPrompt);
+        usedModel = model;
+        break;
+      } catch (err) {
+        attemptErrors.push(err instanceof Error ? err.message : String(err));
+        console.error(`[ai-analysis] ${model} failed, trying next fallback`, err);
+      }
     }
-    const aiJson = await aiRes.json();
-    const content: string = aiJson?.choices?.[0]?.message?.content ?? "";
-    let parsed: {
-      risk_score: number;
-      risk_level: "High" | "Medium" | "Low";
-      summary: string;
-      reasons: Array<{ title: string; detail: string }>;
-      recommendation: string;
-    };
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      throw new Error("AI returned non-JSON content");
+    if (!result || !usedModel) {
+      throw new Error(`All AI models failed: ${attemptErrors.join(" | ")}`);
     }
-
-    const Validate = z.object({
-      risk_score: z.number().int().min(0).max(100),
-      risk_level: z.enum(["High", "Medium", "Low"]),
-      summary: z.string().min(1),
-      reasons: z
-        .array(z.object({ title: z.string(), detail: z.string() }))
-        .min(1)
-        .max(8),
-      recommendation: z.string().min(1),
-    });
-    const safe = Validate.parse(parsed);
+    const { aiJson, safe } = result;
+    const model = usedModel;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: inserted, error: insertErr } = await supabaseAdmin

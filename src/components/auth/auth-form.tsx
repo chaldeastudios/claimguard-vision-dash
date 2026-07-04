@@ -8,6 +8,7 @@ import { OrganizationLogo } from "@/components/brand/organization-logo";
 import { login } from "@/lib/auth.functions";
 import { HOSPITALS, INSURERS, type Institution } from "@/lib/institutions";
 import type { AccountType } from "@/lib/auth-session.server";
+import { getErrorMessage } from "@/lib/error-message";
 
 interface AuthFormProps {
   accountType: AccountType;
@@ -56,7 +57,7 @@ export function AuthForm({ accountType, redirectTo, heroTitle, heroSubtitle }: A
       });
       navigate({ to: redirectTo });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Sign in failed");
+      toast.error(getErrorMessage(err, "Sign in failed"));
     } finally {
       setLoading(false);
     }

@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createPremium, updatePremium } from "@/lib/policy-api";
 import type { Premium } from "@/lib/policy-api";
+import { getErrorMessage } from "@/lib/error-message";
 
 const PremiumSchema = z.object({
   amount: z.coerce.number().positive("Amount must be greater than 0"),
@@ -95,7 +96,7 @@ export function PremiumDialog({
       setOpen(false);
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save contribution");
+      toast.error(getErrorMessage(err, "Failed to save contribution"));
     } finally {
       setSaving(false);
     }

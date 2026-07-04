@@ -7,6 +7,7 @@ import { pendingClaimIds } from "@/lib/pending-analysis";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonKpiRow, SkeletonTable } from "@/components/skeletons";
 import { ShieldAlert, TrendingUp, Wallet, Activity, Search, Loader2 } from "lucide-react";
+import { getErrorMessage } from "@/lib/error-message";
 
 export const Route = createFileRoute("/_authenticated/dashboard/")({
   component: Overview,
@@ -292,7 +293,7 @@ function Overview() {
       {isError && (
         <div className="rounded-2xl bg-[color:var(--risk-high)]/10 p-4 text-sm text-[color:var(--risk-high)]">
           Failed to load claims from openIMIS:{" "}
-          {error instanceof Error ? error.message : String(error)}
+          {getErrorMessage(error)}
         </div>
       )}
 
