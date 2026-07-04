@@ -9,8 +9,6 @@ export const Route = createFileRoute("/auth/insurer")({
       redirectTo="/dashboard"
       heroTitle="Fraud review built for national health schemes."
       heroSubtitle="Sign in to review flagged claims, audit hospitals, and protect public funds."
-      formSubtitleSignIn="Access the ClaimGuard reviewer console."
-      formSubtitleSignUp="Set up access for your scheme team."
     />
   ),
 });

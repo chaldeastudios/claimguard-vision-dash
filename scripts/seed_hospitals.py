@@ -38,10 +38,13 @@ HOSPITALS = [
     ('KNH901', 'Kenyatta National Hospital', 'Hospital Rd, Nairobi', '+254 20 2726300'),
     ('AKU902', 'Aga Khan University Hospital', '3rd Parklands Ave, Nairobi', '+254 20 3662000'),
     ('NKR903', 'Nakuru Level 5 Hospital', 'Hospital Rd, Nakuru', '+254 51 2211691'),
+    ('MTRH904', 'Moi Teaching and Referral Hospital', 'Nandi Rd, Eldoret', '+254 53 2033471'),
+    ('CGTRH905', 'Coast General Teaching and Referral Hospital', 'Kisauni Rd, Mombasa', '+254 41 2314201'),
+    ('MMH906', 'Mater Misericordiae Hospital', 'Dunga Rd, Nairobi', '+254 20 6613000'),
 ]
 
 print("=" * 70)
-print("HOSPITAL FACILITY UUIDS -- paste these into scripts/seed-accounts.mjs")
+print("HOSPITAL FACILITY UUIDS -- paste these into scripts/seed-organizations.mjs")
 print("=" * 70)
 for code, name, address, phone in HOSPITALS:
     hf, created = HealthFacility.objects.get_or_create(

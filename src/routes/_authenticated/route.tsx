@@ -1,20 +1,14 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentSession } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth/insurer" });
+    const session = await getCurrentSession();
+    if (!session) throw redirect({ to: "/auth/insurer" });
+    if (session.accountType === "hospital") throw redirect({ to: "/hospital-portal" });
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", data.user.id)
-      .maybeSingle();
-    if (profile?.account_type === "hospital") throw redirect({ to: "/hospital-portal" });
-
-    return { user: data.user };
+    return { session };
   },
   component: () => <Outlet />,
 });

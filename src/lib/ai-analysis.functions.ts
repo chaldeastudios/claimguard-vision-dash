@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSession } from "@/lib/session-middleware";
 import { getOpenimisClaim } from "@/lib/openimis.server";
 import { z } from "zod";
 
@@ -18,7 +18,7 @@ Respond ONLY with a single JSON object, no markdown, matching this schema:
 }`;
 
 export const analyzeClaim = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSession])
   .inputValidator((data) => Input.parse(data))
   .handler(async ({ data, context }) => {
     const geminiKey = process.env.GEMINI_API_KEY;
@@ -111,7 +111,8 @@ Analyze this claim for fraud, abuse, or billing irregularities.`;
     });
     const safe = Validate.parse(parsed);
 
-    const { data: inserted, error: insertErr } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: inserted, error: insertErr } = await supabaseAdmin
       .from("claim_risk_analysis")
       .insert({
         claim_id: claim.id, // openIMIS claim uuid -- matches what the backend fraud module syncs
@@ -122,7 +123,7 @@ Analyze this claim for fraud, abuse, or billing irregularities.`;
         reasons: safe.reasons,
         recommendation: safe.recommendation,
         raw: aiJson,
-        created_by: context.userId,
+        created_by: context.session.openimisUsername,
       })
       .select()
       .single();

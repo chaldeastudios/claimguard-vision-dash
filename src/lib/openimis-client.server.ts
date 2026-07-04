@@ -61,6 +61,31 @@ async function getToken(): Promise<string> {
   return authenticate();
 }
 
+// Verifies a login form's user-supplied username/password against openIMIS
+// itself (same tokenAuth mutation as the service account above, but never
+// touches tokenCache -- this is a one-off check, not something later
+// requests should authenticate as). Used by the hospital/insurer sign-in
+// flow instead of Supabase Auth: ClaimGuard has no login database of its
+// own, openIMIS is the identity provider.
+export async function verifyOpenimisCredentials(
+  username: string,
+  password: string,
+): Promise<boolean> {
+  const { url } = getConfig();
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT },
+    body: JSON.stringify({
+      query: `mutation TokenAuth($username: String!, $password: String!) {
+        tokenAuth(username: $username, password: $password) { token }
+      }`,
+      variables: { username, password },
+    }),
+  });
+  const json = await res.json();
+  return !!json?.data?.tokenAuth?.token;
+}
+
 // openIMIS's Relay connections cap `first` at 100 server-side
 // (Graphene-Django's max_limit) -- requesting more throws a GraphQL error
 // instead of clamping.

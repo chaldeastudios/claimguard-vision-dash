@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSession } from "./session-middleware";
 import { getOpenimisHealthFacility, type HealthFacility } from "./healthfacility.server";
 
 export interface OrganizationSummary {
@@ -11,9 +11,10 @@ export interface OrganizationSummary {
 
 // The insurer directory a hospital picks from when submitting a claim.
 export const fetchInsurerOrganizations = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<OrganizationSummary[]> => {
-    const { data, error } = await context.supabase
+  .middleware([requireSession])
+  .handler(async (): Promise<OrganizationSummary[]> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("organizations")
       .select("id, name, logo_url")
       .eq("type", "insurer")
@@ -35,23 +36,16 @@ export interface HospitalOrgContext {
 // The logged-in hospital account's own organization -- name/logo for the
 // portal header, and its linked openIMIS facility (if any) so claim
 // submission can default to it instead of asking staff to pick every time.
+// The organization itself is already known from the session (which card was
+// picked at login) -- no per-user profile lookup needed anymore.
 export const fetchHospitalOrgContext = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSession])
   .handler(async ({ context }): Promise<HospitalOrgContext> => {
-    const { data: profile, error: profileError } = await context.supabase
-      .from("profiles")
-      .select("organization_id")
-      .eq("id", context.userId)
-      .maybeSingle();
-    if (profileError) throw profileError;
-    if (!profile?.organization_id) {
-      return { organizationId: null, name: null, logoUrl: null, facility: null };
-    }
-
-    const { data: org, error: orgError } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: org, error: orgError } = await supabaseAdmin
       .from("organizations")
       .select("id, name, logo_url, facility_uuid")
-      .eq("id", profile.organization_id)
+      .eq("id", context.session.organizationId)
       .maybeSingle();
     if (orgError) throw orgError;
     if (!org) return { organizationId: null, name: null, logoUrl: null, facility: null };
@@ -67,15 +61,18 @@ const AssignClaimInput = z.object({
 
 // Tags a just-submitted claim with the insurer the hospital chose. openIMIS
 // has no field for this, so it lives here, keyed by claim uuid -- same join
-// convention as claim_risk_analysis.
+// convention as claim_risk_analysis. Purely narrative for the demo -- every
+// insurer account sees every claim regardless (see claims-api.ts), this
+// just records which one the hospital said it was for.
 export const assignClaimToInsurer = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSession])
   .inputValidator((data) => AssignClaimInput.parse(data))
   .handler(async ({ data, context }): Promise<void> => {
-    const { error } = await context.supabase.from("claim_insurer_assignment").insert({
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("claim_insurer_assignment").insert({
       claim_uuid: data.claimUuid,
       insurer_organization_id: data.insurerOrganizationId,
-      assigned_by: context.userId,
+      assigned_by: context.session.openimisUsername,
     });
     if (error) throw error;
   });

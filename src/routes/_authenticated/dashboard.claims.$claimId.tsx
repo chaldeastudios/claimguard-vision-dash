@@ -77,6 +77,7 @@ function ClaimDetail() {
   const { autoAnalyze } = Route.useSearch();
   const qc = useQueryClient();
   const fetchClaimFn = useServerFn(fetchClaim);
+  const fetchAnalysisFn = useServerFn(fetchLatestAnalysis);
   const analyzeFn = useServerFn(analyzeClaim);
   const [analyzing, setAnalyzing] = useState(false);
   const [justAnalyzed, setJustAnalyzed] = useState(false);
@@ -98,7 +99,7 @@ function ClaimDetail() {
 
   const { data: analysis } = useQuery({
     queryKey: ["analysis", claimId],
-    queryFn: () => fetchLatestAnalysis(claimId),
+    queryFn: () => fetchAnalysisFn({ data: { claimId } }),
     enabled: !!c,
   });
 

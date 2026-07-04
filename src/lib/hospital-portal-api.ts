@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSession } from "./session-middleware";
 import { getOpenimisHealthFacilities } from "./healthfacility.server";
 import { searchOpenimisInsureesByChfId, searchOpenimisInsureesByName } from "./insuree.server";
 import { createOpenimisClaim } from "./openimis.server";
@@ -14,20 +14,20 @@ import type { Insuree } from "./insuree.server";
 // shipping the full insuree list's names/DOB/phone/email over the wire.
 
 export const fetchPublicHealthFacilities = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSession])
   .handler(async (): Promise<HealthFacility[]> => getOpenimisHealthFacilities());
 
 const SearchInsureeInput = z.object({ chfId: z.string().min(1) });
 
 export const searchPublicInsurees = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSession])
   .inputValidator((data) => SearchInsureeInput.parse(data))
   .handler(async ({ data }): Promise<Insuree[]> => searchOpenimisInsureesByChfId(data.chfId));
 
 const SearchInsureeByNameInput = z.object({ name: z.string().min(1) });
 
 export const searchPublicInsureesByName = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSession])
   .inputValidator((data) => SearchInsureeByNameInput.parse(data))
   .handler(async ({ data }): Promise<Insuree[]> => searchOpenimisInsureesByName(data.name));
 
@@ -50,7 +50,7 @@ const SubmitClaimInput = z.object({
 });
 
 export const submitHospitalClaim = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSession])
   .inputValidator((data) => SubmitClaimInput.parse(data))
   .handler(
     async ({ data }): Promise<{ code: string; uuid: string | null }> => createOpenimisClaim(data),

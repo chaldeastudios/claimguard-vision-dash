@@ -1,10 +1,11 @@
 import { Outlet, createFileRoute, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { OrganizationLogo } from "@/components/brand/organization-logo";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { LogOut, Settings as SettingsIcon, Bell } from "lucide-react";
 import { CURRENT_PROFILE_QUERY_KEY, fetchCurrentProfile } from "@/lib/current-profile";
+import { logout } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "ClaimGuard — Reviewer Dashboard" }] }),
@@ -17,8 +18,8 @@ const nav: Array<{ to: string; label: string; end?: boolean }> = [
   { to: "/dashboard/insurees", label: "Insurees" },
 ];
 
-function initialsOf(name?: string | null, email?: string | null) {
-  const src = (name && name.trim()) || (email && email.split("@")[0]) || "U";
+function initialsOf(name?: string | null) {
+  const src = (name && name.trim()) || "U";
   const parts = src.split(/\s+|\./).filter(Boolean);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || src[0].toUpperCase();
 }
@@ -27,6 +28,7 @@ function DashboardLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const logoutFn = useServerFn(logout);
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: CURRENT_PROFILE_QUERY_KEY,
     queryFn: fetchCurrentProfile,
@@ -39,12 +41,12 @@ function DashboardLayout() {
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
-    await supabase.auth.signOut();
+    await logoutFn();
     navigate({ to: "/auth/insurer", replace: true });
   }
 
-  const displayName = profile?.name || profile?.email || "Reviewer";
-  const initials = initialsOf(profile?.name, profile?.email);
+  const displayName = profile?.username || "Reviewer";
+  const initials = initialsOf(profile?.username);
 
   return (
     <div className="min-h-screen w-full bg-background">
@@ -102,7 +104,9 @@ function DashboardLayout() {
             <>
               <div className="hidden flex-col items-end text-right md:flex">
                 <span className="text-xs font-medium text-foreground">{displayName}</span>
-                <span className="text-[10px] text-muted-foreground">{profile?.email ?? "—"}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {profile?.organizationName ?? "—"}
+                </span>
               </div>
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--brand-brown)] text-sm font-medium text-[color:var(--brand-brown-foreground)]">
                 {initials}

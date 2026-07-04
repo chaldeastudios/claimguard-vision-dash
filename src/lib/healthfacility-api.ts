@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSession } from "./session-middleware";
 import { z } from "zod";
 import {
   getOpenimisHealthFacilities,
@@ -10,13 +10,13 @@ import {
 export type { HealthFacility };
 
 export const fetchHealthFacilities = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSession])
   .handler(async (): Promise<HealthFacility[]> => getOpenimisHealthFacilities());
 
 const HealthFacilityIdInput = z.object({ facilityId: z.string().min(1) });
 
 export const fetchHealthFacility = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSession])
   .inputValidator((data) => HealthFacilityIdInput.parse(data))
   .handler(
     async ({ data }): Promise<HealthFacility | null> => getOpenimisHealthFacility(data.facilityId),

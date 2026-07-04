@@ -21,7 +21,7 @@ ClaimGuard detects fraudulent patterns in insurance claims — patient velocity 
     ┌──────▼──────┐  ┌────▼────────┐  ┌──────▼──────────────┐
     │  openIMIS   │  │  openIMIS   │  │  ClaimGuard         │
     │  Backend    │  │  Frontend   │  │  Dashboard (Vite)   │
-    │  (Django)   │  │  (React)    │  │  + Supabase Auth    │
+    │  (Django)   │  │  (React)    │  │  + openIMIS login   │
     │  + fraud    │  │             │  │                     │
     │    module   │  │             │  │                     │
     └──────┬──────┘  └─────────────┘  └─────────────────────┘
@@ -198,7 +198,7 @@ docker exec -it openimis-backend python manage.py test fraud
 | Frontend Dashboard | React + Vite + TanStack Router + Tailwind |
 | Backend Module | Python / Django / Graphene-Django |
 | Database | PostgreSQL 15 |
-| Auth | Supabase Auth |
+| Auth | openIMIS credentials (session cookie, no separate ClaimGuard account) |
 | Interoperability | HL7 FHIR R4 |
 | Containerization | Docker Compose |
 | Gateway | Nginx |

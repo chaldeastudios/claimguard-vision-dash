@@ -155,7 +155,7 @@ services:
       # tells Django to register at "api/graphql" to match what the frontend
       # actually requests, instead of bare "/graphql".
       - SITE_ROOT=api/
-      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
       # Must be the service_role key, not the anon/publishable one -- RLS
       # only allows authenticated reads/writes, and this backend writes
       # server-to-server with no authenticated session, so anon writes get
@@ -205,7 +205,7 @@ services:
       - ALLOWED_HOSTS=*
       - OPENIMIS_MODULES_CONFIG=/app/openimis.json
       - SITE_ROOT=api/
-      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - CELERY_BROKER_URL=amqp://rabbitmq
     volumes:

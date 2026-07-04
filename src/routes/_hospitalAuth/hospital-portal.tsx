@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Loader2, Plus, Send, Trash2, CheckCircle2, X, LogOut, Check } from "lucide-react";
 import { OrganizationLogo } from "@/components/brand/organization-logo";
-import { supabase } from "@/integrations/supabase/client";
+import { logout } from "@/lib/auth.functions";
 import {
   fetchPublicHealthFacilities,
   searchPublicInsurees,
@@ -281,6 +281,7 @@ function HospitalPortal() {
   const fetchServicesFn = useServerFn(fetchMedicalServices);
   const submitClaimFn = useServerFn(submitHospitalClaim);
   const assignClaimFn = useServerFn(assignClaimToInsurer);
+  const logoutFn = useServerFn(logout);
 
   const { data: orgContext, isLoading: orgContextLoading } = useQuery({
     queryKey: ["hospital-org-context"],
@@ -302,7 +303,7 @@ function HospitalPortal() {
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
-    await supabase.auth.signOut();
+    await logoutFn();
     navigate({ to: "/auth/hospital", replace: true });
   }
   const {
